@@ -11,7 +11,11 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
 
 
 CURRENT_FILE = Path(__file__).resolve()
@@ -19,7 +23,7 @@ FRONTEND_ROOT = CURRENT_FILE.parents[1]
 PROJECT_ROOT = CURRENT_FILE.parents[2]
 DOTENV_PATH = PROJECT_ROOT / ".env"
 
-if DOTENV_PATH.exists():
+if load_dotenv and DOTENV_PATH.exists():
     load_dotenv(dotenv_path=DOTENV_PATH)
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -27,6 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 def _resolve_credential_path() -> str:
+    # 1) tenta por env vars normais
     credential_path = (
         os.getenv("FIREBASE_SERVICE_ACCOUNT_FILE")
         or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
@@ -34,14 +39,17 @@ def _resolve_credential_path() -> str:
     if credential_path and Path(credential_path).exists():
         return str(Path(credential_path).resolve())
 
+    # 2) tenta via backend config.py
     try:
         from app.config import FIREBASE_SERVICE_ACCOUNT_FILE  # type: ignore
+
         backend_path = Path(FIREBASE_SERVICE_ACCOUNT_FILE)
         if backend_path.exists():
             return str(backend_path.resolve())
     except Exception:
         pass
 
+    # 3) fallback previsível dentro do projeto
     fallback = PROJECT_ROOT / "credentials" / "firebase-service-account.json"
     if fallback.exists():
         return str(fallback.resolve())
@@ -67,10 +75,13 @@ def get_db():
 def _parse_iso_datetime(value: Any) -> datetime | None:
     if value is None:
         return None
+
     if isinstance(value, datetime):
         return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
     if isinstance(value, date):
         return datetime.combine(value, time.min, tzinfo=timezone.utc)
+
     if isinstance(value, str):
         raw = value.strip()
         if not raw:
@@ -79,10 +90,15 @@ def _parse_iso_datetime(value: Any) -> datetime | None:
             return datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except ValueError:
             return None
+
     return None
 
 
-def compute_date_range(period_mode: str, custom_start: date | None = None, custom_end: date | None = None):
+def compute_date_range(
+    period_mode: str,
+    custom_start: date | None = None,
+    custom_end: date | None = None,
+):
     now = datetime.now(timezone.utc)
     today = now.date()
 
@@ -118,7 +134,10 @@ def list_active_accounts() -> list[dict[str, str]]:
         data = doc.to_dict() or {}
         account_id = data.get("accountId") or doc.id
         email = data.get("emailAddress") or account_id
-        accounts.append({"accountId": account_id, "emailAddress": email})
+        accounts.append({
+            "accountId": account_id,
+            "emailAddress": email,
+        })
 
     accounts.sort(key=lambda x: x["emailAddress"])
     return accounts
@@ -135,18 +154,18 @@ def _stream_collection_for_allowed_accounts(
         query = db.collection(collection_name).where(
             filter=FieldFilter("accountId", "==", account_id)
         )
-        return query.stream()
+        return list(query.stream())
 
     if not allowed_account_ids:
         return []
 
-    # Sem filtro específico = agregação apenas das contas autorizadas
     docs = []
     for allowed_account_id in allowed_account_ids:
         query = db.collection(collection_name).where(
             filter=FieldFilter("accountId", "==", allowed_account_id)
         )
         docs.extend(list(query.stream()))
+
     return docs
 
 
@@ -203,7 +222,9 @@ def load_sale_items_for_sale(
     allowed_account_ids: list[str] | None = None,
 ) -> pd.DataFrame:
     db = get_db()
-    query = db.collection("saleItems").where(filter=FieldFilter("saleId", "==", sale_id))
+    query = db.collection("saleItems").where(
+        filter=FieldFilter("saleId", "==", sale_id)
+    )
 
     rows: list[dict[str, Any]] = []
     for doc in query.stream():
