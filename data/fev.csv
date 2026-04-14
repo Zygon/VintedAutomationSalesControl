@@ -1,0 +1,162 @@
+Courier,Date,ID,Order Status,Price,Product,Selled,PriceTotal,SplitCount,SplitIndex,DateOriginal,SourceFile,SourceRow
+Vinted Go,2026-02-04,1,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,1
+InPost,2026-02-04,2,Shipped,7.0,Suporte - Back To The Future,Vinted,14.0,2,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,2
+InPost,2026-02-04,2,Shipped,7.0,Suporte - Cars,Vinted,14.0,2,2,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,2
+InPost,2026-02-04,3,Shipped,6.65,Suporte - Ferrari,Vinted,13.3,2,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,3
+InPost,2026-02-04,3,Shipped,6.65,Suporte - Mercedes,Vinted,13.3,2,2,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,3
+Vinted Go,2026-02-04,4,Shipped,7.0,Suporte - Back To The Future,Vinted,7.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,4
+Vinted Go,2026-02-04,5,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,5
+Vinted Go,2026-02-04,7,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,6
+Vinted Go,2026-02-04,6,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,7
+Vinted Go,2026-02-05,9,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,8
+InPost,2026-02-05,11,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,9
+Vinted Go,2026-02-05,10,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,10
+Vinted Go,2026-02-05,12,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,11
+Vinted Go,2026-02-05,13,Shipped,5.0,Suporte - Cars,Vinted,5.0,1,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,12
+Vinted Go,2026-02-04,8,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,4-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,13
+Vinted Go,2026-02-05,14,Shipped,5.0,Suporte - Back To The Future,Vinted,10.0,2,1,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,14
+Vinted Go,2026-02-05,14,Shipped,5.0,Suporte - Cars,Vinted,10.0,2,2,5-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,14
+Vinted Go,2026-02-06,17,Shipped,2.5,Bases - Stranger Things,Vinted,2.5,1,1,6-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,15
+Vinted Go,2026-02-06,15,Shipped,7.2,Suporte - Cars,Vinted,7.2,1,1,6-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,16
+Vinted Go,2026-02-06,19,Shipped,7.0,Suporte - Back To The Future,Vinted,7.0,1,1,6-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,17
+InPost,2026-02-07,20,Shipped,9.0,Suporte - 007,Vinted,9.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,18
+InPost,2026-02-06,18,Shipped,7.0,Bases - Stranger Things,Vinted,7.0,1,1,6-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,19
+Vinted Go,2026-02-07,22,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,20
+Vinted Go,2026-02-07,21,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,21
+Vinted Go,2026-02-07,23,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,22
+InPost,2026-02-07,24,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,23
+InPost,2026-02-07,26,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,24
+InPost,2026-02-07,25,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,25
+Vinted Go,2026-02-07,27,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,26
+CTT,2026-02-07,29,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,27
+InPost,2026-02-07,28,Shipped,7.5,Suporte - Back To The Future,Vinted,15.0,2,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,28
+InPost,2026-02-07,28,Shipped,7.5,Suporte - Cars,Vinted,15.0,2,2,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,28
+Vinted Go,2026-02-07,30,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,7-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,29
+InPost,2026-02-08,33,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,8-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,30
+InPost,2026-02-08,34,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,8-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,31
+Vinted Go,2026-02-08,35,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,8-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,32
+Vinted Go,2026-02-09,41,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,33
+InPost,2026-02-09,37,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,34
+Vinted Go,2026-02-09,38,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,35
+InPost,2026-02-08,36,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,8-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,36
+Vinted Go,2026-02-09,42,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,37
+InPost,2026-02-09,39,Shipped,6.0,Suporte - Back To The Future,Vinted,12.0,2,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,38
+InPost,2026-02-09,39,Shipped,6.0,Suporte - Cars,Vinted,12.0,2,2,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,38
+InPost,2026-02-09,40,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,39
+InPost,2026-02-10,44,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,40
+InPost,2026-02-09,43,Shipped,8.0,Bases - Stranger Things,Vinted,16.0,2,1,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,41
+InPost,2026-02-09,43,Shipped,8.0,Expositor - Stranger Things,Vinted,16.0,2,2,9-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,41
+DPD,2026-02-10,46,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,42
+Vinted Go,2026-02-10,45,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,43
+Vinted Go,2026-02-10,47,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,44
+Vinted Go,2026-02-10,49,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,45
+Vinted Go,2026-02-10,48,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,10-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,46
+InPost,2026-02-11,50,Shipped,9.0,Suporte - Back To The Future,Vinted,9.0,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,47
+InPost,2026-02-11,52,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,48
+Vinted Go,2026-02-11,51,Shipped,4.0,Bases - Stranger Things,Vinted,4.0,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,49
+InPost,2026-02-11,54,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,50
+Vinted Go,2026-02-11,53,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,51
+Vinted Go,2026-02-12,57,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,12-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,52
+InPost,2026-02-11,56,Shipped,7.2,Suporte - Back To The Future,Vinted,7.2,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,53
+Vinted Go,2026-02-11,55,Shipped,5.5,Suporte - Cars,Vinted,5.5,1,1,11-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,54
+DPD,2026-02-12,59,Shipped,10.0,Suporte - Cars,Vinted,10.0,1,1,12-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,55
+Vinted Go,2026-02-12,58,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,12-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,56
+Vinted Go,2026-02-13,61,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,57
+InPost,2026-02-13,60,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,58
+Vinted Go,2026-02-13,62,Shipped,16.5,Expositor - Stranger Things,Vinted,16.5,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,59
+Vinted Go,2026-02-13,63,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,60
+Vinted Go,2026-02-13,64,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,61
+Vinted Go,2026-02-13,65,Shipped,6.0,Bases - Stranger Things,Vinted,6.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,62
+DPD,2026-02-13,66,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,63
+InPost,2026-02-13,67,Shipped,8.4,Suporte - Back To The Future,Vinted,16.8,2,1,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,64
+InPost,2026-02-13,67,Shipped,8.4,Suporte - Ferrari,Vinted,16.8,2,2,13-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,64
+InPost,2026-02-14,68,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,65
+Vinted Go,2026-02-14,70,Shipped,6.0,Suporte - Back To The Future,Vinted,12.0,2,1,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,66
+Vinted Go,2026-02-14,70,Shipped,6.0,Suporte - Cars,Vinted,12.0,2,2,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,66
+Vinted Go,2026-02-14,69,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,67
+DPD,2026-02-14,71,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,68
+DPD,2026-02-17,74,Shipped,7.2,Suporte - Cars,Vinted,7.2,1,1,17-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,69
+Vinted Go,2026-02-17,73,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,17-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,70
+InPost,2026-02-14,72,Shipped,9.0,Suporte - Cars,Vinted,9.0,1,1,14-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,71
+InPost,2026-02-18,76,Shipped,8.55,Suporte - Back To The Future,Vinted,17.1,2,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,72
+InPost,2026-02-18,76,Shipped,8.55,Suporte - Cars,Vinted,17.1,2,2,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,72
+Vinted Go,2026-02-18,75,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,73
+CTT,2026-02-18,77,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,74
+Vinted Go,2026-02-18,78,Shipped,7.7,Suporte - Back To The Future,Vinted,15.4,2,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,75
+Vinted Go,2026-02-18,78,Shipped,7.7,Suporte - Cars,Vinted,15.4,2,2,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,75
+InPost,2026-02-18,80,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,76
+InPost,2026-02-18,81,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,77
+DPD,2026-02-18,82,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,78
+Vinted Go,2026-02-18,84,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,79
+InPost,2026-02-18,83,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,18-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,80
+InPost,2026-02-19,87,Shipped,9.0,Suporte - Back To The Future,Vinted,9.0,1,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,81
+Vinted Go,2026-02-19,85,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,82
+InPost,2026-02-19,86,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,83
+InPost,2026-02-19,88,Shipped,4.0,Bases - Stranger Things,Vinted,4.0,1,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,84
+DPD,2026-02-19,89,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,85
+Vinted Go,2026-02-19,90,Shipped,6.5,Suporte - Back To The Future,Vinted,13.0,2,1,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,86
+Vinted Go,2026-02-19,90,Shipped,6.5,Suporte - Cars,Vinted,13.0,2,2,19-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,86
+DPD,2026-02-20,91,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,87
+Vinted Go,2026-02-20,92,Shipped,7.0,Suporte - Cars,Vinted,7.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,88
+Vinted Go,2026-02-20,93,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,89
+Vinted Go,2026-02-20,97,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,90
+InPost,2026-02-20,96,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,91
+InPost,2026-02-20,95,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,92
+Vinted Go,2026-02-20,94,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,93
+Vinted Go,2026-02-20,98,Shipped,7.0,Suporte - Cars,Vinted,7.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,94
+InPost,2026-02-21,100,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,95
+Vinted Go,2026-02-21,101,Shipped,6.0,Bases - Stranger Things,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,96
+DPD,2026-02-21,99,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,97
+InPost,2026-02-21,103,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,98
+Vinted Go,2026-02-21,104,Shipped,16.0,Expositor - Stranger Things,Vinted,16.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,99
+DPD,2026-02-21,102,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,100
+Vinted Go,2026-02-21,105,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,101
+InPost,2026-02-21,107,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,102
+DPD,2026-02-21,106,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,103
+InPost,2026-02-21,108,Shipped,7.2,Suporte - Cars,Vinted,7.2,1,1,21-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,104
+InPost,2026-02-22,110,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,105
+InPost,2026-02-22,109,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,106
+InPost,2026-02-22,111,Shipped,5.0,Bases - Stranger Things,Vinted,5.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,107
+InPost,2026-02-22,113,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,108
+Vinted Go,2026-02-22,112,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,109
+Vinted Go,2026-02-22,115,Shipped,6.0,Suporte - Back To The Future,Vinted,12.0,2,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,110
+Vinted Go,2026-02-22,115,Shipped,6.0,Suporte - Cars,Vinted,12.0,2,2,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,110
+Vinted Go,2026-02-22,114,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,22-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,111
+InPost,2026-02-23,116,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,23-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,112
+InPost,2026-02-23,118,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,23-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,113
+InPost,2026-02-23,117,Shipped,12.0,Suporte - Cars,Vinted,12.0,1,1,23-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,114
+Vinted Go,2026-02-20,116,Shipped,8.0,Bases - Stranger Things,Vinted,8.0,1,1,20-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,115
+Vinted Go,2026-02-23,119,Shipped,7.2,Suporte - Cars,Vinted,7.2,1,1,23-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,116
+Vinted Go,2026-02-24,121,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,24-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,117
+InPost,2026-02-25,123,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,118
+DPD,2026-02-23,120,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,23-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,119
+DPD,2026-02-24,122,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,24-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,120
+Vinted Go,2026-02-25,124,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,121
+InPost,2026-02-25,125,Shipped,3.0,Bases - Stranger Things,Vinted,3.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,122
+InPost,2026-02-25,128,Shipped,6.5,Suporte - Cars,Vinted,6.5,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,123
+Vinted Go,2026-02-25,127,Shipped,6.0,Suporte - Back To The Future,Vinted,6.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,124
+DPD,2026-02-25,126,Shipped,6.0,Suporte - Cars,Vinted,6.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,125
+DPD,2026-02-25,130,Shipped,7.0,Suporte - Back To The Future,Vinted,7.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,126
+InPost,2026-02-25,129,Shipped,6.5,Suporte - Back To The Future,Vinted,6.5,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,127
+InPost,2026-02-25,131,Shipped,6.0,Suporte - 007,,6.0,1,1,25-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,128
+Vinted Go,2026-03-26,132,Shipped,6.5,Suporte - Cars,,6.5,1,1,26-Mar-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,129
+Vinted Go,2026-02-26,133,Shipped,6.5,Suporte - Cars,,6.5,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,130
+Vinted Go,2026-03-26,134,Shipped,7.2,Suporte - Cars,,7.2,1,1,26-Mar-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,131
+DPD,2026-02-26,135,Shipped,6.5,Suporte - Cars,,6.5,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,132
+DPD,2026-02-26,136,Shipped,9.0,Suporte - Cars,,9.0,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,133
+InPost,2026-02-26,137,Shipped,3.5,Bases - Stranger Things,,3.5,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,134
+InPost,2026-02-26,138,Shipped,9.0,Suporte - Cars,,9.0,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,135
+Vinted Go,2026-02-26,139,Shipped,6.5,Suporte - Back To The Future,,6.5,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,136
+InPost,2026-02-26,140,Shipped,6.5,Suporte - 007,,6.5,1,1,26-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,137
+Vinted Go,2026-02-27,141,Shipped,8.55,Suporte - Back To The Future,,17.1,2,1,27-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,138
+Vinted Go,2026-02-27,141,Shipped,8.55,Suporte - Cars,,17.1,2,2,27-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,138
+InPost,2026-03-27,142,Shipped,6.5,Suporte - 007,,19.5,3,1,27-Mar-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139
+InPost,2026-03-27,142,Shipped,6.5,Suporte - Back To The Future,,19.5,3,2,27-Mar-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139
+InPost,2026-03-27,142,Shipped,6.5,Suporte - Cars,,19.5,3,3,27-Mar-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139
+InPost,2026-02-27,143,Shipped,3.5,Bases - Stranger Things,,3.5,1,1,27-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,140
+InPost,2026-02-27,144,Shipped,6.5,Suporte - 007,,6.5,1,1,27-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,141
+Vinted Go,2026-02-28,145,Shipped,3.0,Bases - Stranger Things,,3.0,1,1,28-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,142
+InPost,2026-02-28,146,Shipped,9.0,Suporte - 007,,18.0,2,1,28-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,143
+InPost,2026-02-28,146,Shipped,9.0,Suporte - Ferrari,,18.0,2,2,28-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,143
+InPost,2026-02-28,147,Shipped,6.5,Suporte - Back To The Future,,6.5,1,1,28-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,144
+DPD,2026-02-28,148,Shipped,3.5,Bases - Stranger Things,,3.5,1,1,28-Feb-26,Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,145

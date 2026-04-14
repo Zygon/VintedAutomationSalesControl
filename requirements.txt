@@ -1,0 +1,9 @@
+firebase-admin
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+python-dotenv
+beautifulsoup4
+pypdf
+reportlab

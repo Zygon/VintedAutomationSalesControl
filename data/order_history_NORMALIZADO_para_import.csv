@@ -1,0 +1,332 @@
+source_file,source_row_index,source_id,date,courier,order_status,sold_by,ads,notes,product,product_raw,split_count,split_index,price_total,price_allocated,price_total_cents,price_allocated_cents
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,1,1.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,2,2.0,2026-02-04,InPost,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,14.0,7.0,1400.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,2,2.0,2026-02-04,InPost,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,14.0,7.0,1400.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,3,3.0,2026-02-04,InPost,Shipped,Vinted,,,Suporte - Ferrari,"Suporte - Ferrari, Suporte - Mercedes",2,1,13.3,6.65,1330.0,665.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,3,3.0,2026-02-04,InPost,Shipped,Vinted,,,Suporte - Mercedes,"Suporte - Ferrari, Suporte - Mercedes",2,2,13.3,6.65,1330.0,665.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,4,4.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,5,5.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,6,7.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,7,6.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,8,9.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,9,11.0,2026-02-05,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,10,10.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,11,12.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,12,13.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,13,8.0,2026-02-04,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,14,14.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,10.0,5.0,1000.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,14,14.0,2026-02-05,Vinted Go,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,10.0,5.0,1000.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,15,17.0,2026-02-06,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,2.5,2.5,250.0,250.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,16,15.0,2026-02-06,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,17,19.0,2026-02-06,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,18,20.0,2026-02-07,InPost,Shipped,Vinted,,,Suporte - 007,Suporte - 007,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,19,18.0,2026-02-06,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,20,22.0,2026-02-07,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,21,21.0,2026-02-07,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,22,23.0,2026-02-07,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,23,24.0,2026-02-07,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,24,26.0,2026-02-07,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,25,25.0,2026-02-07,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,26,27.0,2026-02-07,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,27,29.0,2026-02-07,CTT,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,28,28.0,2026-02-07,InPost,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,15.0,7.5,1500.0,750.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,28,28.0,2026-02-07,InPost,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,15.0,7.5,1500.0,750.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,29,30.0,2026-02-07,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,30,33.0,2026-02-08,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,31,34.0,2026-02-08,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,32,35.0,2026-02-08,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,33,41.0,2026-02-09,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,34,37.0,2026-02-09,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,35,38.0,2026-02-09,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,36,36.0,2026-02-08,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,37,42.0,2026-02-09,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,38,39.0,2026-02-09,InPost,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,38,39.0,2026-02-09,InPost,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,39,40.0,2026-02-09,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,40,44.0,2026-02-10,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,41,43.0,2026-02-09,InPost,Shipped,Vinted,,,Bases - Stranger Things,"Bases - Stranger Things, Expositor - Stranger Things",2,1,16.0,8.0,1600.0,800.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,41,43.0,2026-02-09,InPost,Shipped,Vinted,,,Expositor - Stranger Things,"Bases - Stranger Things, Expositor - Stranger Things",2,2,16.0,8.0,1600.0,800.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,42,46.0,2026-02-10,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,43,45.0,2026-02-10,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,44,47.0,2026-02-10,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,45,49.0,2026-02-10,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,46,48.0,2026-02-10,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,47,50.0,2026-02-11,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,48,52.0,2026-02-11,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,49,51.0,2026-02-11,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,4.0,4.0,400.0,400.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,50,54.0,2026-02-11,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,51,53.0,2026-02-11,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,52,57.0,2026-02-12,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,53,56.0,2026-02-11,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,54,55.0,2026-02-11,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,5.5,5.5,550.0,550.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,55,59.0,2026-02-12,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,10.0,10.0,1000.0,1000.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,56,58.0,2026-02-12,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,57,61.0,2026-02-13,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,58,60.0,2026-02-13,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,59,62.0,2026-02-13,Vinted Go,Shipped,Vinted,,,Expositor - Stranger Things,Expositor - Stranger Things,1,1,16.5,16.5,1650.0,1650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,60,63.0,2026-02-13,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,61,64.0,2026-02-13,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,62,65.0,2026-02-13,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,63,66.0,2026-02-13,DPD,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,64,67.0,2026-02-13,InPost,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Ferrari",2,1,16.8,8.4,1680.0,840.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,64,67.0,2026-02-13,InPost,Shipped,Vinted,,,Suporte - Ferrari,"Suporte - Back To The Future, Suporte - Ferrari",2,2,16.8,8.4,1680.0,840.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,65,68.0,2026-02-14,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,66,70.0,2026-02-14,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,66,70.0,2026-02-14,Vinted Go,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,67,69.0,2026-02-14,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,68,71.0,2026-02-14,DPD,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,69,74.0,2026-02-17,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,70,73.0,2026-02-17,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,71,72.0,2026-02-14,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,72,76.0,2026-02-18,InPost,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,17.1,8.55,1710.0,855.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,72,76.0,2026-02-18,InPost,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,17.1,8.55,1710.0,855.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,73,75.0,2026-02-18,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,74,77.0,2026-02-18,CTT,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,75,78.0,2026-02-18,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,15.4,7.7,1540.0,770.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,75,78.0,2026-02-18,Vinted Go,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,15.4,7.7,1540.0,770.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,76,80.0,2026-02-18,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,77,81.0,2026-02-18,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,78,82.0,2026-02-18,DPD,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,79,84.0,2026-02-18,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,80,83.0,2026-02-18,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,81,87.0,2026-02-19,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,82,85.0,2026-02-19,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,83,86.0,2026-02-19,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,84,88.0,2026-02-19,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,4.0,4.0,400.0,400.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,85,89.0,2026-02-19,DPD,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,86,90.0,2026-02-19,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,13.0,6.5,1300.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,86,90.0,2026-02-19,Vinted Go,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,13.0,6.5,1300.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,87,91.0,2026-02-20,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,88,92.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,89,93.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,90,97.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,91,96.0,2026-02-20,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,92,95.0,2026-02-20,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,93,94.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,94,98.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,95,100.0,2026-02-21,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,96,101.0,2026-02-21,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,97,99.0,2026-02-21,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,98,103.0,2026-02-21,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,99,104.0,2026-02-21,Vinted Go,Shipped,Vinted,,,Expositor - Stranger Things,Expositor - Stranger Things,1,1,16.0,16.0,1600.0,1600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,100,102.0,2026-02-21,DPD,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,101,105.0,2026-02-21,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,102,107.0,2026-02-21,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,103,106.0,2026-02-21,DPD,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,104,108.0,2026-02-21,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,105,110.0,2026-02-22,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,106,109.0,2026-02-22,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,107,111.0,2026-02-22,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,108,113.0,2026-02-22,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,109,112.0,2026-02-22,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,110,115.0,2026-02-22,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,110,115.0,2026-02-22,Vinted Go,Shipped,Vinted,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,12.0,6.0,1200.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,111,114.0,2026-02-22,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,112,116.0,2026-02-23,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,113,118.0,2026-02-23,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,114,117.0,2026-02-23,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,12.0,12.0,1200.0,1200.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,115,116.0,2026-02-20,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,8.0,8.0,800.0,800.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,116,119.0,2026-02-23,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,117,121.0,2026-02-24,Vinted Go,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,118,123.0,2026-02-25,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,119,120.0,2026-02-23,DPD,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,120,122.0,2026-02-24,DPD,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,121,124.0,2026-02-25,Vinted Go,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,122,125.0,2026-02-25,InPost,Shipped,Vinted,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,123,128.0,2026-02-25,InPost,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,124,127.0,2026-02-25,Vinted Go,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,125,126.0,2026-02-25,DPD,Shipped,Vinted,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,126,130.0,2026-02-25,DPD,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,127,129.0,2026-02-25,InPost,Shipped,Vinted,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,128,131.0,2026-02-25,InPost,Shipped,,,,Suporte - 007,Suporte - 007,1,1,6.0,6.0,600.0,600.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,129,132.0,2026-03-26,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,130,133.0,2026-02-26,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,131,134.0,2026-03-26,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,132,135.0,2026-02-26,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,133,136.0,2026-02-26,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,134,137.0,2026-02-26,InPost,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.5,3.5,350.0,350.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,135,138.0,2026-02-26,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,136,139.0,2026-02-26,Vinted Go,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,137,140.0,2026-02-26,InPost,Shipped,,,,Suporte - 007,Suporte - 007,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,138,141.0,2026-02-27,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,17.1,8.55,1710.0,855.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,138,141.0,2026-02-27,Vinted Go,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,17.1,8.55,1710.0,855.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139,142.0,2026-03-27,InPost,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Back To The Future, Suporte - Cars",3,1,19.5,6.5,1950.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139,142.0,2026-03-27,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - 007, Suporte - Back To The Future, Suporte - Cars",3,2,19.5,6.5,1950.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,139,142.0,2026-03-27,InPost,Shipped,,,,Suporte - Cars,"Suporte - 007, Suporte - Back To The Future, Suporte - Cars",3,3,19.5,6.5,1950.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,140,143.0,2026-02-27,InPost,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.5,3.5,350.0,350.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,141,144.0,2026-02-27,InPost,Shipped,,,,Suporte - 007,Suporte - 007,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,142,145.0,2026-02-28,Vinted Go,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,143,146.0,2026-02-28,InPost,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Ferrari",2,1,18.0,9.0,1800.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,143,146.0,2026-02-28,InPost,Shipped,,,,Suporte - Ferrari,"Suporte - 007, Suporte - Ferrari",2,2,18.0,9.0,1800.0,900.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,144,147.0,2026-02-28,InPost,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+Order History Fev 3178f55ac2e880019354c2a203369249_all.csv,145,148.0,2026-02-28,DPD,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.5,3.5,350.0,350.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,1,1.0,2026-03-01,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,2,2.0,2026-03-01,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,3,3.0,2026-03-01,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,4,4.0,2026-03-02,Vinted Go,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,8.5,8.5,850.0,850.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,5,5.0,2026-03-02,DPD,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,6,6.0,2026-03-02,InPost,Canceled,,,,Suporte - Cars,Suporte - Cars,1,1,0.0,0.0,0.0,0.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,7,7.0,2026-03-02,DPD,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,8,8.0,2026-03-03,Vinted Go,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,9,9.0,2026-03-03,,Shipped,,,,Suporte - Fast And Furious I,Suporte - Fast And Furious I,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,10,10.0,2026-03-03,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,11,11.0,2026-03-03,Vinted Go,Shipped,,,,Suporte - 007,Suporte - 007,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,12,12.0,2026-03-03,Vinted Go,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,13,13.0,2026-03-04,InPost,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,14,,2026-03-04,InPost,Canceled,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,0.0,0.0,0.0,0.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,15,16.0,2026-03-04,InPost,Shipped,,,,Expositor - Stranger Things,Expositor - Stranger Things,1,1,16.0,16.0,1600.0,1600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,16,16.0,2026-03-04,Vinted Go,Shipped,,,,Expositor - Stranger Things,Expositor - Stranger Things,1,1,16.0,16.0,1600.0,1600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,17,17.0,2026-03-05,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,18,18.0,2026-03-05,Vinted Go,Canceled,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,0.0,0.0,0.0,0.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,19,19.0,2026-03-05,Vinted Go,Shipped,,,,Suporte - 007,Suporte - 007,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,20,20.0,2026-03-05,,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Back To The Future, Suporte - Batman & Robin, Suporte - Cars, Suporte - Harry Potter",5,1,30.0,6.0,3000.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,20,20.0,2026-03-05,,Shipped,,,,Suporte - Back To The Future,"Suporte - 007, Suporte - Back To The Future, Suporte - Batman & Robin, Suporte - Cars, Suporte - Harry Potter",5,2,30.0,6.0,3000.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,20,20.0,2026-03-05,,Shipped,,,,Suporte - Batman & Robin,"Suporte - 007, Suporte - Back To The Future, Suporte - Batman & Robin, Suporte - Cars, Suporte - Harry Potter",5,3,30.0,6.0,3000.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,20,20.0,2026-03-05,,Shipped,,,,Suporte - Cars,"Suporte - 007, Suporte - Back To The Future, Suporte - Batman & Robin, Suporte - Cars, Suporte - Harry Potter",5,4,30.0,6.0,3000.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,20,20.0,2026-03-05,,Shipped,,,,Suporte - Harry Potter,"Suporte - 007, Suporte - Back To The Future, Suporte - Batman & Robin, Suporte - Cars, Suporte - Harry Potter",5,5,30.0,6.0,3000.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,21,21.0,2026-03-06,InPost,Shipped,,,,Suporte - 007,Suporte - 007,1,1,9.0,9.0,900.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,22,22.0,2026-03-06,InPost,Shipped,,,,Suporte - Dodge,Suporte - Dodge,1,1,9.0,9.0,900.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,23,23.0,2026-03-06,,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,25.0,12.5,2500.0,1250.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,23,23.0,2026-03-06,,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,25.0,12.5,2500.0,1250.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,24,24.0,2026-03-06,Vinted Go,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,25,25.0,2026-03-06,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,26,26.0,2026-03-06,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,15.4,7.7,1540.0,770.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,26,26.0,2026-03-06,InPost,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,15.4,7.7,1540.0,770.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,27,27.0,2026-03-07,Vinted Go,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,28,28.0,2026-03-07,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,5.2,5.2,520.0,520.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,29,29.0,2026-03-07,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,5.0,5.0,500.0,500.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,30,30.0,2026-03-10,InPost,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,31,31.0,2026-03-10,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,32,32.0,2026-03-10,Vinted Go,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,33,33.0,2026-03-11,Vinted Go,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Back To The Future",2,1,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,33,33.0,2026-03-11,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - 007, Suporte - Back To The Future",2,2,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,34,34.0,2026-03-11,DPD,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.2,7.2,720.0,720.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,35,35.0,2026-03-11,Vinted Go,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,36,36.0,2026-03-11,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,37,37.0,2026-03-12,Vinted Go,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,38,38.0,2026-03-12,InPost,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda",3,1,19.0,6.34,1900.0,634.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,38,38.0,2026-03-12,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda",3,2,19.0,6.33,1900.0,633.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,38,38.0,2026-03-12,InPost,Shipped,,,,Suporte - Honda,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda",3,3,19.0,6.33,1900.0,633.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,39,39.0,2026-03-12,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,40,40.0,2026-03-12,Vinted Go,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.2,7.2,720.0,720.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,41,41.0,2026-03-12,DPD,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,7.5,7.5,750.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,42,42.0,2026-03-13,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,20.0,10.0,2000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,42,42.0,2026-03-13,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,20.0,10.0,2000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,43,43.0,2026-03-13,DPD,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,7.5,7.5,750.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,44,44.0,2026-03-13,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Red Bull",2,1,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,44,44.0,2026-03-13,InPost,Shipped,,,,Suporte - Red Bull,"Suporte - Back To The Future, Suporte - Red Bull",2,2,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,45,45.0,2026-03-13,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,46,46.0,2026-03-13,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Honda",2,1,15.2,7.6,1520.0,760.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,46,46.0,2026-03-13,InPost,Shipped,,,,Suporte - Honda,"Suporte - Back To The Future, Suporte - Honda",2,2,15.2,7.6,1520.0,760.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,47,47.0,2026-03-13,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,48,48.0,2026-03-13,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,49,49.0,2026-03-14,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,49,49.0,2026-03-14,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,50,50.0,2026-03-14,InPost,Shipped,,,,Suporte - Dodge Toreto,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,1,22.0,7.34,2200.0,734.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,50,50.0,2026-03-14,InPost,Shipped,,,,Suporte - Honda,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,2,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,50,50.0,2026-03-14,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,3,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,51,51.0,2026-03-14,DPD,Shipped,,,,Suporte - Fast And Furious I,Suporte - Fast And Furious I,1,1,5.0,5.0,500.0,500.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,52,52.0,2026-03-14,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,52,52.0,2026-03-14,Vinted Go,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,53,53.0,2026-03-14,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,20.0,10.0,2000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,53,53.0,2026-03-14,InPost,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,20.0,10.0,2000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,54,54.0,2026-03-14,Vinted Go,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,55,55.0,2026-03-15,InPost,Shipped,,,,Bases - Stranger Things,Bases - Stranger Things,1,1,3.0,3.0,300.0,300.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,56,56.0,2026-03-15,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,1,38.0,12.67,3800.0,1267.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,56,56.0,2026-03-15,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,2,38.0,12.67,3800.0,1267.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,56,56.0,2026-03-15,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,3,38.0,12.66,3800.0,1266.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,57,57.0,2026-03-15,DPD,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,58,58.0,2026-03-15,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,58,58.0,2026-03-15,InPost,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,12.0,6.0,1200.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,59,59.0,2026-03-15,InPost,Shipped,,,,Suporte - Cars,"Suporte - Cars, Suporte - Honda, Suporte - Nissan GTR",3,1,18.0,6.0,1800.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,59,59.0,2026-03-15,InPost,Shipped,,,,Suporte - Honda,"Suporte - Cars, Suporte - Honda, Suporte - Nissan GTR",3,2,18.0,6.0,1800.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,59,59.0,2026-03-15,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Cars, Suporte - Honda, Suporte - Nissan GTR",3,3,18.0,6.0,1800.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,60,60.0,2026-03-16,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,1,21.5,7.17,2150.0,717.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,60,60.0,2026-03-16,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,2,21.5,7.17,2150.0,717.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,60,60.0,2026-03-16,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",3,3,21.5,7.16,2150.0,716.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,61,61.0,2026-03-16,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,62,62.0,2026-03-17,DPD,Shipped,,,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,62,62.0,2026-03-17,DPD,Shipped,,,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,63,63.0,2026-03-17,InPost,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,64,64.0,2026-03-17,Vinted Go,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,65,65.0,2026-03-17,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,66,66.0,2026-03-17,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,67,67.0,2026-03-17,Vinted Go,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,68,68.0,2026-03-18,Vinted Go,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,68,68.0,2026-03-18,Vinted Go,Shipped,,,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,69,69.0,2026-03-18,Vinted Go,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,70,70.0,2026-03-18,DPD,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,71,71.0,2026-03-18,InPost,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,72,72.0,2026-03-18,InPost,Shipped,,,,Suporte - 007,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",4,1,34.2,8.55,3420.0,855.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,72,72.0,2026-03-18,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",4,2,34.2,8.55,3420.0,855.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,72,72.0,2026-03-18,InPost,Shipped,,,,Suporte - Honda,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",4,3,34.2,8.55,3420.0,855.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,72,72.0,2026-03-18,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - 007, Suporte - Back To The Future, Suporte - Honda, Suporte - Nissan GTR",4,4,34.2,8.55,3420.0,855.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,73,73.0,2026-03-18,InPost,Shipped,,,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Nissan GTR",2,1,13.45,6.73,1345.0,673.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,73,73.0,2026-03-18,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Back To The Future, Suporte - Nissan GTR",2,2,13.45,6.72,1345.0,672.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,74,74.0,2026-03-19,InPost,Shipped,,,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,18.0,9.0,1800.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,74,74.0,2026-03-19,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,18.0,9.0,1800.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,75,75.0,2026-03-19,InPost,Shipped,,,,Suporte - AMG Amarelo,"Suporte - AMG Amarelo, Suporte - AMG Branco, Suporte - Nissan GTR",3,1,21.0,7.0,2100.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,75,75.0,2026-03-19,InPost,Shipped,,,,Suporte - AMG Branco,"Suporte - AMG Amarelo, Suporte - AMG Branco, Suporte - Nissan GTR",3,2,21.0,7.0,2100.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,75,75.0,2026-03-19,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - AMG Amarelo, Suporte - AMG Branco, Suporte - Nissan GTR",3,3,21.0,7.0,2100.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,76,76.0,2026-03-19,DPD,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,77,77.0,2026-03-19,InPost,Shipped,,,,Suporte - Dodge Toreto,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,1,22.0,7.34,2200.0,734.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,77,77.0,2026-03-19,InPost,Shipped,,,,Suporte - Honda,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,2,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,77,77.0,2026-03-19,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,3,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,78,78.0,2026-03-20,InPost,Shipped,,,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,79,79.0,2026-03-20,InPost,Shipped,,,,Suporte - Cars,"Suporte - Cars, Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",4,1,25.0,6.25,2500.0,625.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,79,79.0,2026-03-20,InPost,Shipped,,,,Suporte - Dodge Toreto,"Suporte - Cars, Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",4,2,25.0,6.25,2500.0,625.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,79,79.0,2026-03-20,InPost,Shipped,,,,Suporte - Honda,"Suporte - Cars, Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",4,3,25.0,6.25,2500.0,625.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,79,79.0,2026-03-20,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Cars, Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",4,4,25.0,6.25,2500.0,625.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,80,80.0,2026-03-20,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,81,81.0,2026-03-21,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.3,6.3,630.0,630.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,82,82.0,2026-03-21,InPost,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,83,83.0,2026-03-21,DPD,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,84,84.0,2026-03-21,InPost,Shipped,,,,Suporte - 007,Suporte - 007,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,85,85.0,2026-03-22,Vinted Go,Shipped,,,,Suporte - Dodge Toreto,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,1,22.0,7.34,2200.0,734.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,85,85.0,2026-03-22,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,2,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,85,85.0,2026-03-22,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,3,22.0,7.33,2200.0,733.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,86,86.0,2026-03-22,InPost,Shipped,,,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,86,86.0,2026-03-22,InPost,Shipped,,,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,16.0,8.0,1600.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,87,87.0,2026-03-22,Vinted Go,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,88,88.0,2026-03-23,Vinted Go,Shipped,,,,Suporte - Dodge Toreto,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,1,20.0,6.67,2000.0,667.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,88,88.0,2026-03-23,Vinted Go,Shipped,,,,Suporte - Honda,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,2,20.0,6.67,2000.0,667.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,88,88.0,2026-03-23,Vinted Go,Shipped,,,,Suporte - Nissan GTR,"Suporte - Dodge Toreto, Suporte - Honda, Suporte - Nissan GTR",3,3,20.0,6.66,2000.0,666.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,89,89.0,2026-03-23,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,90,90.0,2026-03-24,InPost,Shipped,,,,Suporte - Honda,Suporte - Honda,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,91,91.0,2026-03-24,InPost,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,92,92.0,2026-03-24,InPost,Shipped,,,,Suporte - Nissan GTR,Suporte - Nissan GTR,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,93,93.0,2026-03-24,InPost,Shipped,,,,Suporte - Ferrari,Suporte - Ferrari,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,94,94.0,2026-03-24,InPost,Shipped,,,,Suporte - Porsche,Suporte - Porsche,1,1,10.0,10.0,1000.0,1000.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,95,95.0,2026-03-26,DPD,Shipped,,,,Suporte - Cars,Suporte - Cars,1,1,7.8,7.8,780.0,780.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,96,96.0,2026-03-26,InPost,Shipped,,Sim,,Suporte - 007,Suporte - 007,1,1,6.0,6.0,600.0,600.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,97,97.0,2026-03-26,InPost,Shipped,,Sim,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,6.5,6.5,650.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,98,98.0,2026-03-26,Vinted Go,Shipped,,Sim,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,99,99.0,2026-03-27,InPost,Shipped,,Sim,,Suporte - Dodge Toreto,"Suporte - Dodge Toreto, Suporte - Honda",2,1,13.0,6.5,1300.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,99,99.0,2026-03-27,InPost,Shipped,,Sim,,Suporte - Honda,"Suporte - Dodge Toreto, Suporte - Honda",2,2,13.0,6.5,1300.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,100,100.0,2026-03-27,InPost,Shipped,,Não,,Suporte - F1 (AMG),"Suporte - F1 (AMG), Suporte - F1 (Redbull)",2,1,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,100,100.0,2026-03-27,InPost,Shipped,,Não,,Suporte - F1 (Redbull),"Suporte - F1 (AMG), Suporte - F1 (Redbull)",2,2,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,101,101.0,2026-03-27,Vinted Go,Shipped,,Sim,,Suporte - Cars,Suporte - Cars,1,1,8.0,8.0,800.0,800.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,102,102.0,2026-03-28,InPost,Shipped,,Sim,,Suporte - 007,"Suporte - 007, Suporte - Cars",2,1,14.0,7.0,1400.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,102,102.0,2026-03-28,InPost,Shipped,,Sim,,Suporte - Cars,"Suporte - 007, Suporte - Cars",2,2,14.0,7.0,1400.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,103,103.0,2026-03-28,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Honda,"Suporte - Honda, Suporte - Nissan GTR",2,1,14.0,7.0,1400.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,103,103.0,2026-03-28,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Nissan GTR,"Suporte - Honda, Suporte - Nissan GTR",2,2,14.0,7.0,1400.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,104,104.0,2026-03-28,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Cars,Suporte - Cars,1,1,9.0,9.0,900.0,900.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,105,105.0,2026-03-28,DPD,Shipped,,Sim,,Suporte - Cars,Suporte - Cars,1,1,7.2,7.2,720.0,720.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,106,106.0,2026-03-29,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Cars,Suporte - Cars,1,1,14.0,14.0,1400.0,1400.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,107,107.0,2026-03-29,InPost,Shipped,,Não,,Bases - Stranger Things,Bases - Stranger Things,1,1,5.0,5.0,500.0,500.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,108,108.0,,Vinted Go,Awaiting Pickup,,Sim,,Suporte - 007,"Suporte - 007, Suporte - Honda",2,1,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,108,108.0,,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Honda,"Suporte - 007, Suporte - Honda",2,2,15.0,7.5,1500.0,750.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,109,109.0,2026-03-29,InPost,Shipped,,Sim,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,110,110.0,2026-03-30,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,111,111.0,2026-03-30,InPost,Awaiting Pickup,,Não,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,112,112.0,2026-03-30,CTT,Awaiting Pickup,,Não,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,113,113.0,2026-03-30,DPD,Shipped,,Não,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,114,114.0,2026-03-30,Vinted Go,Awaiting Pickup,,Sim,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,115,115.0,2026-03-30,DPD,Shipped,,Não,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,116,116.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Cars,Suporte - Cars,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,117,117.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,118,118.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Honda,Suporte - Honda,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,119,119.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Back To The Future,"Suporte - Back To The Future, Suporte - Cars",2,1,13.0,6.5,1300.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,119,119.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Cars,"Suporte - Back To The Future, Suporte - Cars",2,2,13.0,6.5,1300.0,650.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,120,120.0,2026-03-31,InPost,Awaiting Pickup,,Sim,,Suporte - Back To The Future,Suporte - Back To The Future,1,1,7.0,7.0,700.0,700.0
+🧾Order History 2fe8f55ac2e88106b59dc58771ee78cd.csv,121,,,,,,,,,,1,1,,,,
