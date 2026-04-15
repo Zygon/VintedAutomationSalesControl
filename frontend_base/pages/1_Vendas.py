@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from components.layout import apply_page_layout
+apply_page_layout()
+
 import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
@@ -179,14 +182,14 @@ st.subheader("Tabela de vendas")
 table_columns = [
     c for c in [
         "saleId",
-        "accountId",
         "soldAt",
-        "buyerUsername",
         "articleTitle",
         "sku",
         "value",
         "status",
         "orderId",
+        "accountId",
+        "buyerUsername",
         "matchedLabelId",
     ] if c in sales_df.columns
 ]
