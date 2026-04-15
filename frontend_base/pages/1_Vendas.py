@@ -10,7 +10,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from components.auth_guard import render_user_box, require_login
 from components.charts import render_bar_chart, render_line_chart
 from components.filters import get_active_filters, render_global_filters
-from components.tables import render_kpis
+from components.tables import render_dataframe, render_kpis
 from services.firestore_queries import (
     get_db,
     load_collection_df,
@@ -42,10 +42,6 @@ STATUS_OPTIONS = [
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Converte tipos problemáticos para formatos que o AgGrid aceita sem rebentar
-    com erros do Arrow tipo LargeUtf8.
-    """
     if df.empty:
         return df.copy()
 
@@ -54,28 +50,20 @@ def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
     for col in work.columns:
         series = work[col]
 
-        # datetimes -> string
         if pd.api.types.is_datetime64_any_dtype(series):
             work[col] = series.dt.strftime("%Y-%m-%d %H:%M:%S").where(series.notna(), None)
             continue
 
-        # pandas string dtype / object / mixed -> object puro
         if pd.api.types.is_string_dtype(series) or series.dtype == "object":
             work[col] = series.astype("object")
             work[col] = work[col].where(pd.notna(work[col]), None)
             work[col] = work[col].map(lambda x: str(x) if x is not None else None)
             continue
 
-        # inteiros nullable -> object ou float conforme necessário
-        if pd.api.types.is_integer_dtype(series):
+        if pd.api.types.is_integer_dtype(series) or pd.api.types.is_float_dtype(series):
             work[col] = pd.to_numeric(series, errors="coerce")
             continue
 
-        if pd.api.types.is_float_dtype(series):
-            work[col] = pd.to_numeric(series, errors="coerce")
-            continue
-
-        # fallback
         work[col] = series.astype("object")
         work[col] = work[col].where(pd.notna(work[col]), None)
 
@@ -130,6 +118,25 @@ def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) ->
         updated += 1
 
     return updated
+
+
+def _build_label_table(label: dict) -> pd.DataFrame:
+    if not label:
+        return pd.DataFrame()
+
+    row = {
+        "labelId": label.get("labelId") or label.get("id"),
+        "orderId": label.get("orderId"),
+        "shippingCode": label.get("shippingCode"),
+        "articleTitle": label.get("articleTitle"),
+        "status": label.get("status"),
+        "matchedSaleId": label.get("matchedSaleId"),
+        "matchedBy": label.get("matchedBy"),
+        "localRawPdfPath": label.get("localRawPdfPath"),
+        "localEnrichedPdfPath": label.get("localEnrichedPdfPath"),
+    }
+
+    return pd.DataFrame([row])
 
 
 user = require_login()
@@ -219,6 +226,11 @@ if "status" in grid_df.columns:
 if "value" in grid_df.columns:
     gb.configure_column("value", type=["numericColumn"])
 
+gb.configure_selection(
+    selection_mode="single",
+    use_checkbox=False,
+)
+
 gb.configure_grid_options(
     rowHeight=40,
     animateRows=False,
@@ -230,19 +242,19 @@ row_style_jscode = JsCode(
         const status = (params.data.status || "").toUpperCase();
 
         if (status === "COMPLETED") {
-            return { backgroundColor: "#d1e7dd" }; // verde
+            return { backgroundColor: "#d1e7dd" };
         }
 
         if (status === "SHIPPED") {
-            return { backgroundColor: "#cfe2ff" }; // azul
+            return { backgroundColor: "#cfe2ff" };
         }
 
         if (status === "PRINT_DISPATCHED") {
-            return { backgroundColor: "#fff3cd" }; // amarelo
+            return { backgroundColor: "#fff3cd", color: "#856404" };
         }
 
         if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
-            return { backgroundColor: "#f8d7da" }; // vermelho
+            return { backgroundColor: "#f8d7da" };
         }
 
         return {};
@@ -257,7 +269,7 @@ grid_options = gb.build()
 grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
-    update_mode=GridUpdateMode.VALUE_CHANGED,
+    update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -282,40 +294,78 @@ with save_col:
 
 with info_col:
     st.caption(
-        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | azul = SHIPPED | verde = COMPLETED"
+        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | amarelo = PRINT_DISPATCHED | azul = SHIPPED | verde = COMPLETED"
     )
 
-st.subheader("Detalhe da venda")
-sale_options: list[str] = []
-if not sales_df.empty and "saleId" in sales_df.columns:
-    sale_options = sales_df["saleId"].dropna().astype(str).tolist()
+selected_rows = grid_response.get("selected_rows", [])
+selected_sale_id = None
 
-selected_sale_id = st.selectbox("Seleciona uma saleId", [""] + sale_options)
+if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
+    selected_sale_id = str(selected_rows.iloc[0].get("saleId"))
+elif isinstance(selected_rows, list) and len(selected_rows) > 0:
+    selected_sale_id = str(selected_rows[0].get("saleId"))
 
-if selected_sale_id:
-    sale_row = sales_df[sales_df["saleId"].astype(str) == selected_sale_id].iloc[0].to_dict()
-    st.json(sale_row)
+st.subheader("Detalhe da venda selecionada")
 
-    sale_items_df = load_sale_items_for_sale(
-        selected_sale_id,
-        account_id=account_filter,
-        allowed_account_ids=allowed_account_ids,
-    )
-    st.markdown("#### saleItems")
-    if sale_items_df.empty:
-        st.info("Sem saleItems para esta venda.")
+if not selected_sale_id:
+    st.info("Seleciona uma linha na tabela de vendas para ver os saleItems e a label associada.")
+else:
+    selected_sale = sales_df[sales_df["saleId"].astype(str) == selected_sale_id]
+
+    if selected_sale.empty:
+        st.warning("Não foi possível localizar a venda selecionada.")
     else:
-        st.dataframe(sale_items_df, use_container_width=True, hide_index=True)
+        sale_row = selected_sale.iloc[0].to_dict()
 
-    matched_label_id = sale_row.get("matchedLabelId")
-    if matched_label_id:
-        st.markdown("#### label")
-        label = load_label_by_id(
-            str(matched_label_id),
+        summary_cols = st.columns(4)
+        with summary_cols[0]:
+            st.metric("Order ID", sale_row.get("orderId") or "-")
+        with summary_cols[1]:
+            st.metric("Status", sale_row.get("status") or "-")
+        with summary_cols[2]:
+            value = sale_row.get("value")
+            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
+        with summary_cols[3]:
+            st.metric("SKU", sale_row.get("sku") or "-")
+
+        st.markdown("#### saleItems")
+        sale_items_df = load_sale_items_for_sale(
+            selected_sale_id,
             account_id=account_filter,
             allowed_account_ids=allowed_account_ids,
         )
-        if label:
-            st.json(label)
+
+        if sale_items_df.empty:
+            st.info("Sem saleItems para esta venda.")
         else:
-            st.warning("Label associada não encontrada.")
+            sale_items_visible_cols = [
+                c for c in [
+                    "saleItemId",
+                    "articleTitle",
+                    "sku",
+                    "allocatedValue",
+                    "currency",
+                    "bundleIndex",
+                    "isBundle",
+                    "shippingCode",
+                    "buyerUsername",
+                ] if c in sale_items_df.columns
+            ]
+            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
+
+        st.markdown("#### Label associada")
+        matched_label_id = sale_row.get("matchedLabelId")
+        if not matched_label_id:
+            st.info("Esta venda ainda não tem label associada.")
+        else:
+            label = load_label_by_id(
+                str(matched_label_id),
+                account_id=account_filter,
+                allowed_account_ids=allowed_account_ids,
+            )
+
+            if not label:
+                st.warning("Label associada não encontrada.")
+            else:
+                label_df = _build_label_table(label)
+                render_dataframe(label_df)
