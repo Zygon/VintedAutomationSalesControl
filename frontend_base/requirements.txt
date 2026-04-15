@@ -4,4 +4,4 @@ plotly
 firebase-admin
 google-cloud-firestore
 python-dotenv
-streamlit-aggrid
+streamlit-aggrid==1.0.5
