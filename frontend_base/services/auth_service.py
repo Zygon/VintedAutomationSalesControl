@@ -17,7 +17,8 @@ def is_logged_in() -> bool:
 
 
 def login():
-    st.login("google")
+    # Usa o provider default configurado em [auth]
+    st.login()
 
 
 def logout():
@@ -28,8 +29,6 @@ def get_current_identity() -> dict[str, Any] | None:
     if not is_logged_in():
         return None
 
-    # Streamlit expõe o utilizador autenticado em st.user
-    # atributos típicos: email, name, sub, picture
     user = st.user
 
     user_id = getattr(user, "sub", None) or getattr(user, "email", None)
@@ -72,15 +71,23 @@ def bootstrap_user() -> dict[str, Any] | None:
     }
 
     if existing.exists:
+        existing_data = existing.to_dict() or {}
         user_ref.set(base_payload, merge=True)
-    else:
-        user_ref.set(
-            {
-                **base_payload,
-                "globalRole": "USER",
-                "createdAt": now_iso,
-            },
-            merge=True,
-        )
+        return {
+            **base_payload,
+            "globalRole": existing_data.get("globalRole", "USER"),
+        }
 
-    return {**base_payload, "globalRole": "USER" if not existing.exists else (existing.to_dict() or {}).get("globalRole", "USER")}
+    user_ref.set(
+        {
+            **base_payload,
+            "globalRole": "USER",
+            "createdAt": now_iso,
+        },
+        merge=True,
+    )
+
+    return {
+        **base_payload,
+        "globalRole": "USER",
+    }

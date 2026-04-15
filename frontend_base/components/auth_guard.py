@@ -9,8 +9,10 @@ def require_login() -> dict:
     if not is_logged_in():
         st.title("Login necessário")
         st.write("Tens de iniciar sessão com Google para usar esta app.")
+
         if st.button("Entrar com Google", type="primary"):
             login()
+
         st.stop()
 
     user = bootstrap_user()
@@ -28,5 +30,6 @@ def render_user_box(user: dict):
         st.markdown("### Utilizador")
         st.write(user.get("displayName") or user.get("email"))
         st.caption(user.get("email"))
+
         if st.button("Logout"):
             logout()
