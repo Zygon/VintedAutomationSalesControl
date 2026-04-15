@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 from components.auth_guard import render_user_box, require_login
 from components.charts import render_bar_chart, render_line_chart
@@ -35,27 +36,6 @@ STATUS_OPTIONS = [
     "ERROR",
     "PRINT_ERROR",
 ]
-
-
-def _row_color(status: str) -> str:
-    value = str(status or "").strip().upper()
-
-    if value in {"WAITING_LABEL", "READY_TO_PRINT"}:
-        return "background-color: #f8d7da"  # vermelho claro
-    if value == "COMPLETED":
-        return "background-color: #d1e7dd"  # verde claro
-    if value == "SHIPPED":
-        return "background-color: #cfe2ff"  # azul claro
-
-    return ""
-
-
-def _style_sales_editor(df: pd.DataFrame) -> pd.io.formats.style.Styler:
-    def style_row(row: pd.Series):
-        color = _row_color(row.get("status", ""))
-        return [color] * len(row)
-
-    return df.style.apply(style_row, axis=1)
 
 
 def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) -> int:
@@ -137,7 +117,7 @@ render_kpis([
     ("Ticket médio", format_currency(safe_avg(sales_df, "value"))),
 ])
 
-left, right = st.columns([1.2, 1])
+left, right = st.columns([1.3, 1])
 
 with left:
     series_df = (
@@ -154,7 +134,7 @@ st.subheader("Tabela de vendas")
 
 table_columns = [
     c for c in [
-        "saleId",          # fica oculto, mas necessário para update e detalhe
+        "saleId",
         "accountId",
         "soldAt",
         "buyerUsername",
@@ -163,43 +143,84 @@ table_columns = [
         "value",
         "status",
         "orderId",
-        "matchedLabelId",  # fica oculto
+        "matchedLabelId",
     ] if c in sales_df.columns
 ]
 
-editor_df = sales_df[table_columns].copy()
+table_df = sales_df[table_columns].copy()
 
-styled_editor_df = _style_sales_editor(editor_df)
+gb = GridOptionsBuilder.from_dataframe(table_df)
 
-edited_df = st.data_editor(
-    styled_editor_df,
-    width="stretch",
-    hide_index=True,
-    key="sales_editor",
-    disabled=[c for c in editor_df.columns if c != "status"],
-    column_config={
-        "saleId": None,
-        "matchedLabelId": None,
-        "status": st.column_config.SelectboxColumn(
-            "status",
-            options=STATUS_OPTIONS,
-            required=True,
-        ),
-        "accountId": st.column_config.TextColumn("accountId"),
-        "soldAt": st.column_config.TextColumn("soldAt"),
-        "buyerUsername": st.column_config.TextColumn("buyerUsername"),
-        "articleTitle": st.column_config.TextColumn("articleTitle"),
-        "sku": st.column_config.TextColumn("sku"),
-        "value": st.column_config.NumberColumn("value", format="%.2f"),
-        "orderId": st.column_config.TextColumn("orderId"),
-    },
+gb.configure_default_column(
+    resizable=True,
+    sortable=True,
+    filter=True,
 )
+
+gb.configure_column("saleId", hide=True)
+gb.configure_column("matchedLabelId", hide=True)
+
+if "status" in table_df.columns:
+    gb.configure_column(
+        "status",
+        editable=True,
+        cellEditor="agSelectCellEditor",
+        cellEditorParams={"values": STATUS_OPTIONS},
+    )
+
+if "value" in table_df.columns:
+    gb.configure_column("value", type=["numericColumn"])
+
+gb.configure_grid_options(
+    rowHeight=40,
+    animateRows=False,
+)
+
+row_style_jscode = JsCode(
+    """
+    function(params) {
+        const status = (params.data.status || "").toUpperCase();
+
+        if (status === "COMPLETED") {
+            return { backgroundColor: "#d1e7dd" };
+        }
+
+        if (status === "SHIPPED") {
+            return { backgroundColor: "#cfe2ff" };
+        }
+
+        if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
+            return { backgroundColor: "#f8d7da" };
+        }
+
+        return {};
+    }
+    """
+)
+
+gb.configure_grid_options(getRowStyle=row_style_jscode)
+
+grid_options = gb.build()
+
+grid_response = AgGrid(
+    table_df,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.VALUE_CHANGED,
+    allow_unsafe_jscode=True,
+    fit_columns_on_grid_load=False,
+    use_container_width=True,
+    height=500,
+    theme="streamlit",
+    reload_data=False,
+)
+
+edited_df = pd.DataFrame(grid_response["data"])
 
 save_col, info_col = st.columns([1, 3])
 
 with save_col:
     if st.button("Guardar alterações de status"):
-        updated_count = _update_sale_statuses(editor_df, edited_df)
+        updated_count = _update_sale_statuses(table_df, edited_df)
 
         if updated_count > 0:
             st.success(f"{updated_count} venda(s) atualizada(s).")

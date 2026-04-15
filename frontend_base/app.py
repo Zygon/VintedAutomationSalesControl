@@ -1,8 +1,15 @@
 from pathlib import Path
 
-from dotenv import load_dotenv
 import streamlit as st
 
+st.set_page_config(
+    page_title="Vinted Ops Dashboard",
+    page_icon="📦",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+from dotenv import load_dotenv
 from components.auth_guard import render_user_box, require_login
 from components.filters import render_global_filters
 
@@ -11,13 +18,6 @@ DOTENV_PATH = PROJECT_ROOT / ".env"
 
 if DOTENV_PATH.exists():
     load_dotenv(dotenv_path=DOTENV_PATH)
-
-st.set_page_config(
-    page_title="Vinted Ops Dashboard",
-    page_icon="📦",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
 user = require_login()
 render_user_box(user)
