@@ -38,6 +38,47 @@ STATUS_OPTIONS = [
 ]
 
 
+def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Converte tipos problemáticos para formatos que o AgGrid aceita sem rebentar
+    com erros do Arrow tipo LargeUtf8.
+    """
+    if df.empty:
+        return df.copy()
+
+    work = df.copy()
+
+    for col in work.columns:
+        series = work[col]
+
+        # datetimes -> string
+        if pd.api.types.is_datetime64_any_dtype(series):
+            work[col] = series.dt.strftime("%Y-%m-%d %H:%M:%S").where(series.notna(), None)
+            continue
+
+        # pandas string dtype / object / mixed -> object puro
+        if pd.api.types.is_string_dtype(series) or series.dtype == "object":
+            work[col] = series.astype("object")
+            work[col] = work[col].where(pd.notna(work[col]), None)
+            work[col] = work[col].map(lambda x: str(x) if x is not None else None)
+            continue
+
+        # inteiros nullable -> object ou float conforme necessário
+        if pd.api.types.is_integer_dtype(series):
+            work[col] = pd.to_numeric(series, errors="coerce")
+            continue
+
+        if pd.api.types.is_float_dtype(series):
+            work[col] = pd.to_numeric(series, errors="coerce")
+            continue
+
+        # fallback
+        work[col] = series.astype("object")
+        work[col] = work[col].where(pd.notna(work[col]), None)
+
+    return work
+
+
 def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) -> int:
     if original_df.empty or edited_df.empty:
         return 0
@@ -47,6 +88,9 @@ def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) ->
 
     original = original_df[["saleId", "status"]].copy()
     current = edited_df[["saleId", "status"]].copy()
+
+    original["saleId"] = original["saleId"].astype(str)
+    current["saleId"] = current["saleId"].astype(str)
 
     merged = original.merge(
         current,
@@ -148,8 +192,9 @@ table_columns = [
 ]
 
 table_df = sales_df[table_columns].copy()
+grid_df = _sanitize_for_aggrid(table_df)
 
-gb = GridOptionsBuilder.from_dataframe(table_df)
+gb = GridOptionsBuilder.from_dataframe(grid_df)
 
 gb.configure_default_column(
     resizable=True,
@@ -160,7 +205,7 @@ gb.configure_default_column(
 gb.configure_column("saleId", hide=True)
 gb.configure_column("matchedLabelId", hide=True)
 
-if "status" in table_df.columns:
+if "status" in grid_df.columns:
     gb.configure_column(
         "status",
         editable=True,
@@ -168,7 +213,7 @@ if "status" in table_df.columns:
         cellEditorParams={"values": STATUS_OPTIONS},
     )
 
-if "value" in table_df.columns:
+if "value" in grid_df.columns:
     gb.configure_column("value", type=["numericColumn"])
 
 gb.configure_grid_options(
@@ -203,13 +248,13 @@ gb.configure_grid_options(getRowStyle=row_style_jscode)
 grid_options = gb.build()
 
 grid_response = AgGrid(
-    table_df,
+    grid_df,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.VALUE_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
-    height=500,
+    height=550,
     theme="streamlit",
     reload_data=False,
 )
@@ -230,7 +275,7 @@ with save_col:
 
 with info_col:
     st.caption(
-        "Cores por status: vermelho = WAITING_LABEL / READY_TO_PRINT | azul = SHIPPED | verde = COMPLETED"
+        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | azul = SHIPPED | verde = COMPLETED"
     )
 
 st.subheader("Detalhe da venda")

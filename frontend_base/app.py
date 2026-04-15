@@ -9,6 +9,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.markdown(
+    """
+    <style>
+    .block-container {
+        max-width: 100% !important;
+        padding-top: 1rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 from dotenv import load_dotenv
 from components.auth_guard import render_user_box, require_login
 from components.filters import render_global_filters
