@@ -230,15 +230,19 @@ row_style_jscode = JsCode(
         const status = (params.data.status || "").toUpperCase();
 
         if (status === "COMPLETED") {
-            return { backgroundColor: "#d1e7dd" };
+            return { backgroundColor: "#d1e7dd" }; // verde
         }
 
         if (status === "SHIPPED") {
-            return { backgroundColor: "#cfe2ff" };
+            return { backgroundColor: "#cfe2ff" }; // azul
+        }
+
+        if (status === "PRINT_DISPATCHED") {
+            return { backgroundColor: "#fff3cd" }; // amarelo
         }
 
         if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
-            return { backgroundColor: "#f8d7da" };
+            return { backgroundColor: "#f8d7da" }; // vermelho
         }
 
         return {};
