@@ -6,7 +6,7 @@ import streamlit as st
 from components.auth_guard import render_user_box, require_login
 from components.charts import render_bar_chart, render_line_chart
 from components.filters import get_active_filters, render_global_filters
-from components.tables import render_dataframe, render_kpis
+from components.tables import render_kpis
 from services.firestore_queries import (
     get_db,
     load_collection_df,
@@ -37,23 +37,52 @@ STATUS_OPTIONS = [
 ]
 
 
-def _style_status_rows(df: pd.DataFrame) -> pd.io.formats.style.Styler:
-    def row_style(row: pd.Series):
-        status = str(row.get("status", "")).strip().upper()
+def _row_color(status: str) -> str:
+    value = str(status or "").strip().upper()
 
-        if status in {"WAITING_LABEL", "READY_TO_PRINT"}:
-            return ["background-color: #f8d7da"] * len(row)  # vermelho claro
-        if status == "COMPLETED":
-            return ["background-color: #d1e7dd"] * len(row)  # verde claro
-        if status == "SHIPPED":
-            return ["background-color: #cfe2ff"] * len(row)  # azul claro
+    if value in {"WAITING_LABEL", "READY_TO_PRINT"}:
+        return "background-color: #f8d7da"  # vermelho claro
+    if value == "COMPLETED":
+        return "background-color: #d1e7dd"  # verde claro
+    if value == "SHIPPED":
+        return "background-color: #cfe2ff"  # azul claro
 
-        return [""] * len(row)
-
-    return df.style.apply(row_style, axis=1)
+    return ""
 
 
-def _update_sale_statuses(changed_rows: list[dict]):
+def _style_sales_editor(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+    def style_row(row: pd.Series):
+        color = _row_color(row.get("status", ""))
+        return [color] * len(row)
+
+    return df.style.apply(style_row, axis=1)
+
+
+def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) -> int:
+    if original_df.empty or edited_df.empty:
+        return 0
+
+    if "saleId" not in original_df.columns or "saleId" not in edited_df.columns:
+        return 0
+
+    original = original_df[["saleId", "status"]].copy()
+    current = edited_df[["saleId", "status"]].copy()
+
+    merged = original.merge(
+        current,
+        on="saleId",
+        suffixes=("_old", "_new"),
+    )
+
+    changed_rows = [
+        {
+            "saleId": row["saleId"],
+            "status": row["status_new"],
+        }
+        for _, row in merged.iterrows()
+        if str(row["status_old"]) != str(row["status_new"])
+    ]
+
     if not changed_rows:
         return 0
 
@@ -96,7 +125,6 @@ sales_df = load_collection_df(
     date_range=date_range,
 )
 
-# Ordenação por soldAt desc
 if not sales_df.empty:
     if "soldAtParsed" in sales_df.columns:
         sales_df = sales_df.sort_values("soldAtParsed", ascending=False, na_position="last")
@@ -124,11 +152,9 @@ with right:
 
 st.subheader("Tabela de vendas")
 
-# Mantemos saleId internamente para update e detalhe, mas não mostramos
-table_df = sales_df.copy()
-
-visible_cols = [
+table_columns = [
     c for c in [
+        "saleId",          # fica oculto, mas necessário para update e detalhe
         "accountId",
         "soldAt",
         "buyerUsername",
@@ -137,77 +163,54 @@ visible_cols = [
         "value",
         "status",
         "orderId",
-    ] if c in table_df.columns
+        "matchedLabelId",  # fica oculto
+    ] if c in sales_df.columns
 ]
 
-editor_df = table_df.copy()
+editor_df = sales_df[table_columns].copy()
 
-# Data editor para editar status
-editable_cols = [
-    c for c in ["saleId", *visible_cols] if c in editor_df.columns
-]
-editor_df = editor_df[editable_cols].copy()
+styled_editor_df = _style_sales_editor(editor_df)
 
 edited_df = st.data_editor(
-    editor_df,
-    use_container_width=True,
+    styled_editor_df,
+    width="stretch",
     hide_index=True,
+    key="sales_editor",
+    disabled=[c for c in editor_df.columns if c != "status"],
     column_config={
-        "saleId": st.column_config.TextColumn("saleId", disabled=True, width="small"),
+        "saleId": None,
+        "matchedLabelId": None,
         "status": st.column_config.SelectboxColumn(
             "status",
             options=STATUS_OPTIONS,
             required=True,
         ),
+        "accountId": st.column_config.TextColumn("accountId"),
+        "soldAt": st.column_config.TextColumn("soldAt"),
+        "buyerUsername": st.column_config.TextColumn("buyerUsername"),
+        "articleTitle": st.column_config.TextColumn("articleTitle"),
+        "sku": st.column_config.TextColumn("sku"),
+        "value": st.column_config.NumberColumn("value", format="%.2f"),
+        "orderId": st.column_config.TextColumn("orderId"),
     },
-    disabled=[c for c in editor_df.columns if c not in {"status"}],
-    key="sales_editor",
 )
 
-col_save, col_info = st.columns([1, 3])
+save_col, info_col = st.columns([1, 3])
 
-with col_save:
+with save_col:
     if st.button("Guardar alterações de status"):
-        if "saleId" not in edited_df.columns or "saleId" not in editor_df.columns:
-            st.error("Não foi possível identificar as vendas para atualização.")
+        updated_count = _update_sale_statuses(editor_df, edited_df)
+
+        if updated_count > 0:
+            st.success(f"{updated_count} venda(s) atualizada(s).")
+            st.rerun()
         else:
-            original = editor_df[["saleId", "status"]].copy().reset_index(drop=True)
-            current = edited_df[["saleId", "status"]].copy().reset_index(drop=True)
+            st.info("Não houve alterações de status para guardar.")
 
-            merged = original.merge(
-                current,
-                on="saleId",
-                suffixes=("_old", "_new"),
-            )
-
-            changed_rows = [
-                {
-                    "saleId": row["saleId"],
-                    "status": row["status_new"],
-                }
-                for _, row in merged.iterrows()
-                if str(row["status_old"]) != str(row["status_new"])
-            ]
-
-            updated_count = _update_sale_statuses(changed_rows)
-            if updated_count:
-                st.success(f"{updated_count} venda(s) atualizada(s).")
-                st.rerun()
-            else:
-                st.info("Não houve alterações de status para guardar.")
-
-with col_info:
+with info_col:
     st.caption(
-        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | azul = SHIPPED | verde = COMPLETED"
+        "Cores por status: vermelho = WAITING_LABEL / READY_TO_PRINT | azul = SHIPPED | verde = COMPLETED"
     )
-
-# Tabela colorida só para leitura visual
-st.markdown("#### Vista colorida")
-if visible_cols:
-    styled_df = table_df[visible_cols].copy()
-    st.dataframe(_style_status_rows(styled_df), use_container_width=True, hide_index=True)
-else:
-    render_dataframe(table_df)
 
 st.subheader("Detalhe da venda")
 sale_options: list[str] = []
@@ -218,8 +221,6 @@ selected_sale_id = st.selectbox("Seleciona uma saleId", [""] + sale_options)
 
 if selected_sale_id:
     sale_row = sales_df[sales_df["saleId"].astype(str) == selected_sale_id].iloc[0].to_dict()
-
-    # aqui podes mostrar tudo, incluindo IDs, porque é detalhe técnico
     st.json(sale_row)
 
     sale_items_df = load_sale_items_for_sale(
@@ -228,7 +229,10 @@ if selected_sale_id:
         allowed_account_ids=allowed_account_ids,
     )
     st.markdown("#### saleItems")
-    render_dataframe(sale_items_df)
+    if sale_items_df.empty:
+        st.info("Sem saleItems para esta venda.")
+    else:
+        st.dataframe(sale_items_df, use_container_width=True, hide_index=True)
 
     matched_label_id = sale_row.get("matchedLabelId")
     if matched_label_id:
