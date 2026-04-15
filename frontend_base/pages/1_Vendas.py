@@ -37,6 +37,7 @@ STATUS_OPTIONS = [
     "COMPLETED",
     "REVIEW",
     "ERROR",
+    "CANCELED",
     "PRINT_ERROR",
 ]
 
@@ -125,14 +126,11 @@ def _build_label_table(label: dict) -> pd.DataFrame:
         return pd.DataFrame()
 
     row = {
-        "labelId": label.get("labelId") or label.get("id"),
-        "orderId": label.get("orderId"),
         "shippingCode": label.get("shippingCode"),
         "articleTitle": label.get("articleTitle"),
         "status": label.get("status"),
         "matchedSaleId": label.get("matchedSaleId"),
         "matchedBy": label.get("matchedBy"),
-        "localRawPdfPath": label.get("localRawPdfPath"),
         "localEnrichedPdfPath": label.get("localEnrichedPdfPath"),
     }
 
@@ -165,10 +163,14 @@ if not sales_df.empty:
     elif "soldAt" in sales_df.columns:
         sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
+valid_sales_df = sales_df[sales_df["status"] != "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else sales_df
+canceled_sales_df = sales_df[sales_df["status"] == "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else pd.DataFrame()
+
 render_kpis([
-    ("Total de vendas", str(safe_count(sales_df))),
-    ("Faturação", format_currency(safe_sum(sales_df, "value"))),
-    ("Ticket médio", format_currency(safe_avg(sales_df, "value"))),
+    ("Registos", str(safe_count(sales_df))),
+    ("Vendas válidas", str(safe_count(valid_sales_df))),
+    ("Receita válida", format_currency(safe_sum(valid_sales_df, "value"))),
+    ("Canceladas", str(safe_count(canceled_sales_df))),
 ])
 
 left, right = st.columns([1.3, 1])
@@ -256,6 +258,10 @@ row_style_jscode = JsCode(
         if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
             return { backgroundColor: "#f8d7da" };
         }
+        
+        if (status === "CANCELED") {
+            return { backgroundColor: "#e2e3e5", color: "#41464b" };
+        }
 
         return {};
     }
@@ -340,13 +346,10 @@ else:
         else:
             sale_items_visible_cols = [
                 c for c in [
-                    "saleItemId",
                     "articleTitle",
                     "sku",
                     "allocatedValue",
                     "currency",
-                    "bundleIndex",
-                    "isBundle",
                     "shippingCode",
                     "buyerUsername",
                 ] if c in sale_items_df.columns
