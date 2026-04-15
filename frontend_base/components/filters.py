@@ -33,10 +33,18 @@ def _compute_date_range(period_mode: str, custom_start: date, custom_end: date):
 def render_global_filters(user: dict):
     st.sidebar.markdown("## Filtros globais")
 
-    from services.access_service import get_allowed_accounts
+    cached_allowed_user_id = st.session_state.get("_allowed_accounts_user_id")
+    cached_allowed_accounts = st.session_state.get("allowed_accounts")
 
-    allowed_accounts = get_allowed_accounts(user["userId"])
-    st.session_state["allowed_accounts"] = allowed_accounts
+    if cached_allowed_user_id == user["userId"] and cached_allowed_accounts is not None:
+        allowed_accounts = cached_allowed_accounts
+    else:
+        from services.access_service import get_allowed_accounts
+
+        allowed_accounts = get_allowed_accounts(user["userId"])
+        st.session_state["allowed_accounts"] = allowed_accounts
+        st.session_state["_allowed_accounts_user_id"] = user["userId"]
+
     st.session_state["allowed_account_ids"] = [a["accountId"] for a in allowed_accounts]
 
     account_options = [{"accountId": "__ALL__", "emailAddress": "Todas", "role": None}] + allowed_accounts

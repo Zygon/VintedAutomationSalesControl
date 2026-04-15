@@ -17,11 +17,22 @@ def is_logged_in() -> bool:
 
 
 def login():
-    # Usa o provider default configurado em [auth]
     st.login()
 
 
 def logout():
+    # limpa cache de sessão relacionada com o utilizador
+    for key in [
+        "_bootstrapped_user",
+        "_bootstrapped_user_id",
+        "allowed_accounts",
+        "allowed_account_ids",
+        "selected_account_id",
+        "selected_account_role",
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
+
     st.logout()
 
 
@@ -48,10 +59,16 @@ def get_current_identity() -> dict[str, Any] | None:
     }
 
 
-def bootstrap_user() -> dict[str, Any] | None:
+def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
     identity = get_current_identity()
     if not identity:
         return None
+
+    cached_user = st.session_state.get("_bootstrapped_user")
+    cached_user_id = st.session_state.get("_bootstrapped_user_id")
+
+    if not force_refresh and cached_user and cached_user_id == identity["userId"]:
+        return cached_user
 
     db = get_db()
     user_ref = db.collection("users").document(identity["userId"])
@@ -73,21 +90,25 @@ def bootstrap_user() -> dict[str, Any] | None:
     if existing.exists:
         existing_data = existing.to_dict() or {}
         user_ref.set(base_payload, merge=True)
-        return {
+        result = {
             **base_payload,
             "globalRole": existing_data.get("globalRole", "USER"),
         }
-
-    user_ref.set(
-        {
+    else:
+        user_ref.set(
+            {
+                **base_payload,
+                "globalRole": "USER",
+                "createdAt": now_iso,
+            },
+            merge=True,
+        )
+        result = {
             **base_payload,
             "globalRole": "USER",
-            "createdAt": now_iso,
-        },
-        merge=True,
-    )
+        }
 
-    return {
-        **base_payload,
-        "globalRole": "USER",
-    }
+    st.session_state["_bootstrapped_user"] = result
+    st.session_state["_bootstrapped_user_id"] = identity["userId"]
+
+    return result
