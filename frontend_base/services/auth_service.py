@@ -12,8 +12,27 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _user_dict() -> dict[str, Any]:
+    try:
+        if hasattr(st.user, "to_dict"):
+            data = st.user.to_dict()
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+
+    try:
+        if isinstance(st.user, dict):
+            return dict(st.user)
+    except Exception:
+        pass
+
+    return {}
+
+
 def is_logged_in() -> bool:
-    return bool(st.user.is_logged_in)
+    user_data = _user_dict()
+    return bool(user_data.get("is_logged_in", False))
 
 
 def login():
@@ -40,12 +59,12 @@ def get_current_identity() -> dict[str, Any] | None:
     if not is_logged_in():
         return None
 
-    user = st.user
+    user_data = _user_dict()
 
-    user_id = getattr(user, "sub", None) or getattr(user, "email", None)
-    email = getattr(user, "email", None)
-    display_name = getattr(user, "name", None) or email
-    photo_url = getattr(user, "picture", None)
+    user_id = user_data.get("sub") or user_data.get("email")
+    email = user_data.get("email")
+    display_name = user_data.get("name") or email
+    photo_url = user_data.get("picture")
 
     if not user_id or not email:
         return None
@@ -78,7 +97,6 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
 
     if existing.exists:
         existing_data = existing.to_dict() or {}
-
         result = {
             "userId": identity["userId"],
             "email": identity["email"],
@@ -92,7 +110,6 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
             "lastLoginAt": now_iso,
         }
 
-        # write mínimo, só merge simples
         user_ref.set(
             {
                 "email": identity["email"],
@@ -117,7 +134,6 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
             "updatedAt": now_iso,
             "lastLoginAt": now_iso,
         }
-
         user_ref.set(result, merge=True)
 
     st.session_state["_bootstrapped_user"] = result
