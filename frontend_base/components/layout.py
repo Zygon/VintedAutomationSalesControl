@@ -4,12 +4,7 @@ import streamlit as st
 
 
 def apply_page_layout():
-    st.set_page_config(
-        page_title="Vinted Ops Dashboard",
-        page_icon="📦",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
+
 
     st.markdown(
         """

@@ -21,11 +21,11 @@ def login():
 
 
 def logout():
-    # limpa cache de sessão relacionada com o utilizador
     for key in [
         "_bootstrapped_user",
         "_bootstrapped_user_id",
         "allowed_accounts",
+        "_allowed_accounts_user_id",
         "allowed_account_ids",
         "selected_account_id",
         "selected_account_role",
@@ -76,37 +76,49 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
 
     now_iso = utc_now_iso()
 
-    base_payload = {
-        "userId": identity["userId"],
-        "email": identity["email"],
-        "displayName": identity["displayName"],
-        "photoURL": identity["photoURL"],
-        "provider": identity["provider"],
-        "status": "ACTIVE",
-        "updatedAt": now_iso,
-        "lastLoginAt": now_iso,
-    }
-
     if existing.exists:
         existing_data = existing.to_dict() or {}
-        user_ref.set(base_payload, merge=True)
+
         result = {
-            **base_payload,
+            "userId": identity["userId"],
+            "email": identity["email"],
+            "displayName": identity["displayName"],
+            "photoURL": identity["photoURL"],
+            "provider": identity["provider"],
+            "status": existing_data.get("status", "ACTIVE"),
             "globalRole": existing_data.get("globalRole", "USER"),
+            "createdAt": existing_data.get("createdAt"),
+            "updatedAt": now_iso,
+            "lastLoginAt": now_iso,
         }
-    else:
+
+        # write mínimo, só merge simples
         user_ref.set(
             {
-                **base_payload,
-                "globalRole": "USER",
-                "createdAt": now_iso,
+                "email": identity["email"],
+                "displayName": identity["displayName"],
+                "photoURL": identity["photoURL"],
+                "provider": identity["provider"],
+                "updatedAt": now_iso,
+                "lastLoginAt": now_iso,
             },
             merge=True,
         )
+    else:
         result = {
-            **base_payload,
+            "userId": identity["userId"],
+            "email": identity["email"],
+            "displayName": identity["displayName"],
+            "photoURL": identity["photoURL"],
+            "provider": identity["provider"],
+            "status": "ACTIVE",
             "globalRole": "USER",
+            "createdAt": now_iso,
+            "updatedAt": now_iso,
+            "lastLoginAt": now_iso,
         }
+
+        user_ref.set(result, merge=True)
 
     st.session_state["_bootstrapped_user"] = result
     st.session_state["_bootstrapped_user_id"] = identity["userId"]
