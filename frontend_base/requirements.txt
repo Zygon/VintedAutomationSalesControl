@@ -1,7 +1,5 @@
-streamlit[auth]
-pandas
-plotly
+psycopg[binary]
 firebase-admin
-google-cloud-firestore
 python-dotenv
-streamlit-aggrid==1.0.5
+pandas
+streamlit

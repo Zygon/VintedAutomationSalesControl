@@ -1,292 +1,510 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+import os
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-import os
-import sys
 
 import pandas as pd
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
-from google.cloud.firestore_v1.base_query import FieldFilter
 
 try:
     from dotenv import load_dotenv
-except ModuleNotFoundError:
+except ImportError:
     load_dotenv = None
 
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except ImportError:
+    psycopg = None
+    dict_row = None
 
-CURRENT_FILE = Path(__file__).resolve()
-FRONTEND_ROOT = CURRENT_FILE.parents[1]
-PROJECT_ROOT = CURRENT_FILE.parents[2]
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+except ImportError:
+    firebase_admin = None
+    credentials = None
+    firestore = None
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DOTENV_PATH = PROJECT_ROOT / ".env"
 
 if load_dotenv and DOTENV_PATH.exists():
     load_dotenv(dotenv_path=DOTENV_PATH)
 
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+
+DB_PROVIDER = os.getenv("DB_PROVIDER", "firebase").strip().lower()
+
+FIREBASE_SERVICE_ACCOUNT_FILE = os.getenv("FIREBASE_SERVICE_ACCOUNT_FILE")
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "").strip()
+POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+POSTGRES_DB = os.getenv("POSTGRES_DB", "").strip()
+POSTGRES_USER = os.getenv("POSTGRES_USER", "").strip()
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "").strip()
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE", "require").strip()
 
 
-def _resolve_credential_path() -> str:
-    # 1) tenta por env vars normais
-    credential_path = (
-        os.getenv("FIREBASE_SERVICE_ACCOUNT_FILE")
-        or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    )
-    if credential_path and Path(credential_path).exists():
-        return str(Path(credential_path).resolve())
-
-    # 2) tenta via backend config.py
-    try:
-        from app.config import FIREBASE_SERVICE_ACCOUNT_FILE  # type: ignore
-
-        backend_path = Path(FIREBASE_SERVICE_ACCOUNT_FILE)
-        if backend_path.exists():
-            return str(backend_path.resolve())
-    except Exception:
-        pass
-
-    # 3) fallback previsível dentro do projeto
-    fallback = PROJECT_ROOT / "credentials" / "firebase-service-account.json"
-    if fallback.exists():
-        return str(fallback.resolve())
-
-    raise RuntimeError(
-        "Não foi possível localizar as credenciais Firebase. "
-        "Coloca o ficheiro em credentials/firebase-service-account.json "
-        "ou define FIREBASE_SERVICE_ACCOUNT_FILE / GOOGLE_APPLICATION_CREDENTIALS."
-    )
+@dataclass
+class DateRange:
+    start: datetime
+    end: datetime
 
 
-@st.cache_resource(show_spinner=False)
-def get_db():
-    credential_path = _resolve_credential_path()
+COLLECTION_DATE_FIELDS: dict[str, list[str]] = {
+    "sales": ["soldAt", "completedAt", "updatedAt", "createdAt"],
+    "labels": ["createdAt", "updatedAt"],
+    "saleItems": ["completedAt", "createdAt", "updatedAt"],
+    "expenses": ["issuedAt", "createdAt", "updatedAt"],
+    "payouts": ["paidOutAt", "createdAt", "updatedAt"],
+    "printJobs": ["createdAt", "printedAt", "updatedAt"],
+    "events": ["createdAt"],
+    "accounts": ["createdAt", "updatedAt", "lastRunAt"],
+    "users": ["createdAt", "updatedAt", "lastLoginAt"],
+    "userAccounts": ["createdAt", "updatedAt"],
+    "products": ["createdAt", "updatedAt"],
+    "skuCounters": ["createdAt", "updatedAt"],
+    "generatedSkus": ["createdAt", "updatedAt"],
+}
 
-    if not firebase_admin._apps:
-        cred = credentials.Certificate(credential_path)
-        firebase_admin.initialize_app(cred)
 
-    return firestore.client()
+def _ensure_timezone(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
-def _parse_iso_datetime(value: Any) -> datetime | None:
-    if value is None:
+def parse_datetime(value: Any) -> datetime | None:
+    if value is None or value == "":
         return None
 
     if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        return _ensure_timezone(value)
 
-    if isinstance(value, date):
-        return datetime.combine(value, time.min, tzinfo=timezone.utc)
+    if hasattr(value, "to_datetime"):
+        try:
+            return _ensure_timezone(value.to_datetime())
+        except Exception:
+            return None
+
+    if isinstance(value, pd.Timestamp):
+        if pd.isna(value):
+            return None
+        return _ensure_timezone(value.to_pydatetime())
 
     if isinstance(value, str):
-        raw = value.strip()
-        if not raw:
+        text = value.strip()
+        if not text:
             return None
+
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+
         try:
-            return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            return _ensure_timezone(datetime.fromisoformat(text))
         except ValueError:
-            return None
+            pass
+
+        known_formats = [
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y",
+        ]
+        for fmt in known_formats:
+            try:
+                return _ensure_timezone(datetime.strptime(text, fmt))
+            except ValueError:
+                continue
 
     return None
 
 
-def compute_date_range(
-    period_mode: str,
-    custom_start: date | None = None,
-    custom_end: date | None = None,
-):
+def build_date_range(period_key: str) -> DateRange:
     now = datetime.now(timezone.utc)
-    today = now.date()
 
-    if period_mode == "Dia":
-        start_date = today
-        end_date = today
-    elif period_mode == "Semana":
-        start_date = today - timedelta(days=today.weekday())
-        end_date = today
-    elif period_mode == "Mês":
-        start_date = today.replace(day=1)
-        end_date = today
+    if period_key == "day":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period_key == "week":
+        start = (now - timedelta(days=now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    elif period_key == "month":
+        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     else:
-        start_date = custom_start or today
-        end_date = custom_end or today
+        start = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
-    return {
-        "start": datetime.combine(start_date, time.min, tzinfo=timezone.utc),
-        "end": datetime.combine(end_date, time.max, tzinfo=timezone.utc),
-    }
+    return DateRange(start=start, end=now)
 
 
-def list_active_accounts() -> list[dict[str, str]]:
-    db = get_db()
-    docs = (
-        db.collection("accounts")
-        .where(filter=FieldFilter("status", "==", "ACTIVE"))
-        .stream()
-    )
-
-    accounts: list[dict[str, str]] = []
-    for doc in docs:
-        data = doc.to_dict() or {}
-        account_id = data.get("accountId") or doc.id
-        email = data.get("emailAddress") or account_id
-        accounts.append({
-            "accountId": account_id,
-            "emailAddress": email,
-        })
-
-    accounts.sort(key=lambda x: x["emailAddress"])
-    return accounts
-
-
-def _stream_collection_for_allowed_accounts(
-    collection_name: str,
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
-):
-    db = get_db()
-
-    if account_id:
-        query = db.collection(collection_name).where(
-            filter=FieldFilter("accountId", "==", account_id)
-        )
-        return list(query.stream())
-
-    if not allowed_account_ids:
-        return []
-
-    docs = []
-    for allowed_account_id in allowed_account_ids:
-        query = db.collection(collection_name).where(
-            filter=FieldFilter("accountId", "==", allowed_account_id)
-        )
-        docs.extend(list(query.stream()))
-
-    return docs
-
-
-def load_collection_df(
-    collection_name: str,
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
-    date_field: str | None = None,
-    date_range: dict | None = None,
-) -> pd.DataFrame:
-    docs = _stream_collection_for_allowed_accounts(
+def _get_collection_date_fields(collection_name: str) -> list[str]:
+    return COLLECTION_DATE_FIELDS.get(
         collection_name,
-        account_id=account_id,
-        allowed_account_ids=allowed_account_ids,
+        ["createdAt", "updatedAt"],
     )
 
-    rows: list[dict[str, Any]] = []
 
-    for doc in docs:
-        data = doc.to_dict() or {}
-        data.setdefault("id", doc.id)
+def _pick_primary_date(row: dict[str, Any], collection_name: str) -> datetime | None:
+    for field in _get_collection_date_fields(collection_name):
+        parsed = parse_datetime(row.get(field))
+        if parsed is not None:
+            return parsed
+    return None
 
-        if date_field and date_range:
-            parsed_dt = _parse_iso_datetime(data.get(date_field))
-            if parsed_dt is None:
-                continue
-            if not (date_range["start"] <= parsed_dt <= date_range["end"]):
-                continue
-            data[f"{date_field}Parsed"] = parsed_dt
 
-        rows.append(data)
+@st.cache_resource(show_spinner=False)
+def get_db():
+    if DB_PROVIDER == "firebase":
+        return _get_firebase_db()
+    if DB_PROVIDER == "postgres":
+        return _get_postgres_connection()
+    raise RuntimeError(f"DB_PROVIDER inválido: {DB_PROVIDER}")
+
+
+def _get_firebase_credentials_path() -> str | None:
+    if FIREBASE_SERVICE_ACCOUNT_FILE:
+        return FIREBASE_SERVICE_ACCOUNT_FILE
+    if GOOGLE_APPLICATION_CREDENTIALS:
+        return GOOGLE_APPLICATION_CREDENTIALS
+    return None
+
+
+def _get_firebase_db():
+    if firebase_admin is None or credentials is None or firestore is None:
+        raise RuntimeError(
+            "firebase_admin não está instalado. Adiciona firebase-admin ao requirements."
+        )
+
+    cred_path = _get_firebase_credentials_path()
+    if not cred_path:
+        raise RuntimeError(
+            "Define FIREBASE_SERVICE_ACCOUNT_FILE ou GOOGLE_APPLICATION_CREDENTIALS."
+        )
+
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(credentials.Certificate(cred_path))
+
+    return firestore.client()
+
+
+def _postgres_dsn() -> str:
+    missing = [
+        name
+        for name, value in {
+            "POSTGRES_HOST": POSTGRES_HOST,
+            "POSTGRES_DB": POSTGRES_DB,
+            "POSTGRES_USER": POSTGRES_USER,
+            "POSTGRES_PASSWORD": POSTGRES_PASSWORD,
+        }.items()
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(
+            f"Config PostgreSQL incompleta. Variáveis em falta: {', '.join(missing)}"
+        )
+
+    return (
+        f"host={POSTGRES_HOST} "
+        f"port={POSTGRES_PORT} "
+        f"dbname={POSTGRES_DB} "
+        f"user={POSTGRES_USER} "
+        f"password={POSTGRES_PASSWORD} "
+        f"sslmode={POSTGRES_SSLMODE}"
+    )
+
+
+def _get_postgres_connection():
+    if psycopg is None or dict_row is None:
+        raise RuntimeError(
+            "psycopg não está instalado. Adiciona psycopg[binary] ao requirements."
+        )
+
+    return psycopg.connect(_postgres_dsn(), row_factory=dict_row)
+
+
+def _normalize_firestore_doc(doc) -> dict[str, Any]:
+    data = doc.to_dict() or {}
+    if "id" not in data:
+        data["id"] = doc.id
+    return data
+
+
+def _rows_from_firestore(
+    collection_name: str,
+    account_ids: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    db = get_db()
+    query = db.collection(collection_name)
+
+    if account_ids:
+        if len(account_ids) == 1:
+            query = query.where("accountId", "==", account_ids[0])
+            docs = query.stream()
+        else:
+            rows: list[dict[str, Any]] = []
+            for account_id in account_ids:
+                partial = (
+                    db.collection(collection_name)
+                    .where("accountId", "==", account_id)
+                    .stream()
+                )
+                rows.extend(_normalize_firestore_doc(doc) for doc in partial)
+            return rows
+    else:
+        docs = query.stream()
+
+    return [_normalize_firestore_doc(doc) for doc in docs]
+
+
+def _quote_ident(name: str) -> str:
+    safe = name.replace('"', '""')
+    return f'"{safe}"'
+
+
+def _rows_from_postgres(
+    table_name: str,
+    account_ids: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    conn = get_db()
+    sql = f"SELECT * FROM {_quote_ident(table_name)}"
+    params: list[Any] = []
+
+    if account_ids:
+        if len(account_ids) == 1:
+            sql += ' WHERE "accountId" = %s'
+            params.append(account_ids[0])
+        else:
+            sql += ' WHERE "accountId" = ANY(%s)'
+            params.append(account_ids)
+
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        if "id" not in item:
+            if f"{table_name[:-1]}Id" in item:
+                item["id"] = item[f"{table_name[:-1]}Id"]
+            elif table_name == "saleItems" and "saleItemId" in item:
+                item["id"] = item["saleItemId"]
+            elif table_name == "printJobs" and "printJobId" in item:
+                item["id"] = item["printJobId"]
+        normalized.append(item)
+
+    return normalized
+
+
+def _rows_from_provider(
+    collection_name: str,
+    account_ids: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    if DB_PROVIDER == "firebase":
+        return _rows_from_firestore(collection_name, account_ids=account_ids)
+    if DB_PROVIDER == "postgres":
+        return _rows_from_postgres(collection_name, account_ids=account_ids)
+    raise RuntimeError(f"DB_PROVIDER inválido: {DB_PROVIDER}")
+
+
+def _filter_rows_by_date_range(
+    rows: list[dict[str, Any]],
+    collection_name: str,
+    date_range: DateRange | None,
+) -> list[dict[str, Any]]:
+    if date_range is None:
+        return rows
+
+    filtered: list[dict[str, Any]] = []
+    for row in rows:
+        row_dt = _pick_primary_date(row, collection_name)
+        if row_dt is None:
+            continue
+        if date_range.start <= row_dt <= date_range.end:
+            filtered.append(row)
+    return filtered
+
+
+def _sort_rows(
+    rows: list[dict[str, Any]],
+    collection_name: str,
+    sort_desc: bool = True,
+) -> list[dict[str, Any]]:
+    date_fields = _get_collection_date_fields(collection_name)
+
+    def sort_key(row: dict[str, Any]):
+        for field in date_fields:
+            parsed = parse_datetime(row.get(field))
+            if parsed is not None:
+                return parsed
+        return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+    return sorted(rows, key=sort_key, reverse=sort_desc)
+
+
+def _rows_to_df(rows: list[dict[str, Any]]) -> pd.DataFrame:
+    if not rows:
+        return pd.DataFrame()
 
     df = pd.DataFrame(rows)
-    if df.empty:
-        return df
 
-    for column in [
-        "soldAt",
-        "receivedAt",
-        "completedAt",
-        "shippedAt",
-        "updatedAt",
-        "createdAt",
-    ]:
-        if column in df.columns:
-            df[f"{column}Parsed"] = pd.to_datetime(df[column], errors="coerce", utc=True)
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].apply(
+                lambda x: x.isoformat() if isinstance(x, datetime) else x
+            )
 
     return df
 
 
-def load_sale_items_for_sale(
-    sale_id: str,
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
+@st.cache_data(show_spinner=False, ttl=60)
+def list_active_accounts() -> list[dict[str, Any]]:
+    rows = _rows_from_provider("accounts")
+    active = [row for row in rows if str(row.get("status", "")).upper() == "ACTIVE"]
+    active = sorted(active, key=lambda x: str(x.get("emailAddress") or x.get("accountId") or ""))
+    return active
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def list_user_account_ids(user_id: str) -> list[str]:
+    if not user_id:
+        return []
+
+    rows = _rows_from_provider("userAccounts")
+    result: list[str] = []
+
+    for row in rows:
+        if str(row.get("userId")) != str(user_id):
+            continue
+        if str(row.get("status", "ACTIVE")).upper() != "ACTIVE":
+            continue
+        account_id = row.get("accountId")
+        if account_id:
+            result.append(str(account_id))
+
+    seen = set()
+    ordered: list[str] = []
+    for item in result:
+        if item not in seen:
+            seen.add(item)
+            ordered.append(item)
+
+    return ordered
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def load_collection_df(
+    collection_name: str,
+    account_ids: list[str] | None = None,
+    date_range: DateRange | None = None,
+    sort_desc: bool = True,
 ) -> pd.DataFrame:
-    db = get_db()
-    query = db.collection("saleItems").where(
-        filter=FieldFilter("saleId", "==", sale_id)
-    )
-
-    rows: list[dict[str, Any]] = []
-    for doc in query.stream():
-        row = doc.to_dict() or {}
-        row_account_id = row.get("accountId")
-
-        if account_id and row_account_id != account_id:
-            continue
-
-        if not account_id and allowed_account_ids and row_account_id not in allowed_account_ids:
-            continue
-
-        row.setdefault("id", doc.id)
-        rows.append(row)
-
-    return pd.DataFrame(rows)
+    rows = _rows_from_provider(collection_name, account_ids=account_ids)
+    rows = _filter_rows_by_date_range(rows, collection_name, date_range)
+    rows = _sort_rows(rows, collection_name, sort_desc=sort_desc)
+    return _rows_to_df(rows)
 
 
-def load_label_by_id(
-    label_id: str,
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
-) -> dict[str, Any] | None:
+@st.cache_data(show_spinner=False, ttl=60)
+def load_sale_items_for_sale(sale_id: str) -> pd.DataFrame:
+    if not sale_id:
+        return pd.DataFrame()
+
+    rows = _rows_from_provider("saleItems")
+    result = [row for row in rows if str(row.get("saleId")) == str(sale_id)]
+    result = _sort_rows(result, "saleItems", sort_desc=False)
+    return _rows_to_df(result)
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def load_labels_for_sale(sale_id: str) -> pd.DataFrame:
+    if not sale_id:
+        return pd.DataFrame()
+
+    rows = _rows_from_provider("labels")
+    result = [row for row in rows if str(row.get("matchedSaleId")) == str(sale_id)]
+
+    if not result:
+        result = [row for row in rows if str(row.get("saleId")) == str(sale_id)]
+
+    result = _sort_rows(result, "labels", sort_desc=True)
+    return _rows_to_df(result)
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def load_print_jobs_for_sale(sale_id: str) -> pd.DataFrame:
+    if not sale_id:
+        return pd.DataFrame()
+
+    rows = _rows_from_provider("printJobs")
+    result = [row for row in rows if str(row.get("saleId")) == str(sale_id)]
+    result = _sort_rows(result, "printJobs", sort_desc=True)
+    return _rows_to_df(result)
+
+
+def update_sale_status(sale_id: str, new_status: str) -> None:
+    if not sale_id or not new_status:
+        return
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    if DB_PROVIDER == "firebase":
+        db = get_db()
+        db.collection("sales").document(str(sale_id)).set(
+            {
+                "status": new_status,
+                "updatedAt": now,
+            },
+            merge=True,
+        )
+    elif DB_PROVIDER == "postgres":
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE "sales"
+                SET "status" = %s,
+                    "updatedAt" = %s
+                WHERE "saleId" = %s
+                """,
+                (new_status, now, str(sale_id)),
+            )
+        conn.commit()
+    else:
+        raise RuntimeError(f"DB_PROVIDER inválido: {DB_PROVIDER}")
+
+    clear_all_caches()
+
+
+@st.cache_data(show_spinner=False, ttl=60)
+def load_label_by_id(label_id: str) -> dict | None:
     if not label_id:
         return None
 
-    db = get_db()
-    doc = db.collection("labels").document(label_id).get()
-    if not doc.exists:
-        return None
+    rows = _rows_from_provider("labels")
 
-    data = doc.to_dict() or {}
-    row_account_id = data.get("accountId")
+    for row in rows:
+        # tenta vários campos possíveis (porque tens inconsistência de nomes)
+        if (
+            str(row.get("labelId")) == str(label_id)
+            or str(row.get("id")) == str(label_id)
+        ):
+            return row
 
-    if account_id and row_account_id != account_id:
-        return None
+    return None
 
-    if not account_id and allowed_account_ids and row_account_id not in allowed_account_ids:
-        return None
+def clear_all_caches() -> None:
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
 
-    data.setdefault("id", doc.id)
-    return data
-
-
-def load_products_df(
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
-) -> pd.DataFrame:
-    return load_collection_df(
-        "products",
-        account_id=account_id,
-        allowed_account_ids=allowed_account_ids,
-    )
-
-
-def load_generated_skus_df(
-    account_id: str | None = None,
-    allowed_account_ids: list[str] | None = None,
-) -> pd.DataFrame:
-    return load_collection_df(
-        "generatedSkus",
-        account_id=account_id,
-        allowed_account_ids=allowed_account_ids,
-        date_field="createdAt",
-    )
+    try:
+        st.cache_resource.clear()
+    except Exception:
+        pass
