@@ -5,26 +5,18 @@ from typing import Any
 
 import streamlit as st
 
-from services.firestore_queries import get_db
-
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
 def _safe_user_dict() -> dict[str, Any]:
-    """
-    Lê st.user da forma mais defensiva possível.
-    Quando a auth do Streamlit não está configurada/carregada,
-    st.user pode existir mas não ter atributos utilizáveis.
-    """
     try:
         data = st.user.to_dict()
         if isinstance(data, dict):
             return data
     except Exception:
         pass
-
     return {}
 
 
@@ -73,10 +65,20 @@ def get_current_identity() -> dict[str, Any] | None:
         "displayName": display_name,
         "photoURL": photo_url,
         "provider": "google_oidc",
+        "status": "ACTIVE",
+        "globalRole": "USER",
+        "lastLoginAt": utc_now_iso(),
     }
 
 
 def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
+    """
+    NÃO bate no Firestore no arranque.
+    Resolve o utilizador autenticado só a partir do st.user
+    e guarda-o em session_state.
+
+    Isto evita que a app morra logo no login por causa de Firebase.
+    """
     identity = get_current_identity()
     if not identity:
         return None
@@ -87,60 +89,21 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
     if not force_refresh and cached_user and cached_user_id == identity["userId"]:
         return cached_user
 
-    db = get_db()
-
-    # Neste ponto, o teu código atual assume Firebase.
-    # Quando mudares mesmo para Postgres no auth bootstrap,
-    # adaptas aqui. Para já, não vou inventar e partir mais coisas.
-    user_ref = db.collection("users").document(identity["userId"])
-    existing = user_ref.get()
-
-    now_iso = utc_now_iso()
-
-    if existing.exists:
-        existing_data = existing.to_dict() or {}
-
-        result = {
-            "userId": identity["userId"],
-            "email": identity["email"],
-            "displayName": identity["displayName"],
-            "photoURL": identity["photoURL"],
-            "provider": identity["provider"],
-            "status": existing_data.get("status", "ACTIVE"),
-            "globalRole": existing_data.get("globalRole", "USER"),
-            "createdAt": existing_data.get("createdAt"),
-            "updatedAt": now_iso,
-            "lastLoginAt": now_iso,
-        }
-
-        user_ref.set(
-            {
-                "email": identity["email"],
-                "displayName": identity["displayName"],
-                "photoURL": identity["photoURL"],
-                "provider": identity["provider"],
-                "updatedAt": now_iso,
-                "lastLoginAt": now_iso,
-            },
-            merge=True,
-        )
-    else:
-        result = {
-            "userId": identity["userId"],
-            "email": identity["email"],
-            "displayName": identity["displayName"],
-            "photoURL": identity["photoURL"],
-            "provider": identity["provider"],
-            "status": "ACTIVE",
-            "globalRole": "USER",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-            "lastLoginAt": now_iso,
-        }
-
-        user_ref.set(result, merge=True)
+    result = {
+        "userId": identity["userId"],
+        "email": identity["email"],
+        "displayName": identity["displayName"],
+        "photoURL": identity["photoURL"],
+        "provider": identity["provider"],
+        "status": identity.get("status", "ACTIVE"),
+        "globalRole": identity.get("globalRole", "USER"),
+        "createdAt": st.session_state.get("_bootstrapped_user_created_at") or utc_now_iso(),
+        "updatedAt": utc_now_iso(),
+        "lastLoginAt": utc_now_iso(),
+    }
 
     st.session_state["_bootstrapped_user"] = result
     st.session_state["_bootstrapped_user_id"] = identity["userId"]
+    st.session_state["_bootstrapped_user_created_at"] = result["createdAt"]
 
     return result
