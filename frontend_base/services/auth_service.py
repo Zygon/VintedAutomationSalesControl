@@ -12,18 +12,16 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _user_dict() -> dict[str, Any]:
+def _safe_user_dict() -> dict[str, Any]:
+    """
+    Lê st.user da forma mais defensiva possível.
+    Quando a auth do Streamlit não está configurada/carregada,
+    st.user pode existir mas não ter atributos utilizáveis.
+    """
     try:
-        if hasattr(st.user, "to_dict"):
-            data = st.user.to_dict()
-            if isinstance(data, dict):
-                return data
-    except Exception:
-        pass
-
-    try:
-        if isinstance(st.user, dict):
-            return dict(st.user)
+        data = st.user.to_dict()
+        if isinstance(data, dict):
+            return data
     except Exception:
         pass
 
@@ -31,7 +29,7 @@ def _user_dict() -> dict[str, Any]:
 
 
 def is_logged_in() -> bool:
-    user_data = _user_dict()
+    user_data = _safe_user_dict()
     return bool(user_data.get("is_logged_in", False))
 
 
@@ -56,10 +54,10 @@ def logout():
 
 
 def get_current_identity() -> dict[str, Any] | None:
-    if not is_logged_in():
-        return None
+    user_data = _safe_user_dict()
 
-    user_data = _user_dict()
+    if not user_data.get("is_logged_in", False):
+        return None
 
     user_id = user_data.get("sub") or user_data.get("email")
     email = user_data.get("email")
@@ -90,6 +88,10 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
         return cached_user
 
     db = get_db()
+
+    # Neste ponto, o teu código atual assume Firebase.
+    # Quando mudares mesmo para Postgres no auth bootstrap,
+    # adaptas aqui. Para já, não vou inventar e partir mais coisas.
     user_ref = db.collection("users").document(identity["userId"])
     existing = user_ref.get()
 
@@ -97,6 +99,7 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
 
     if existing.exists:
         existing_data = existing.to_dict() or {}
+
         result = {
             "userId": identity["userId"],
             "email": identity["email"],
@@ -134,6 +137,7 @@ def bootstrap_user(force_refresh: bool = False) -> dict[str, Any] | None:
             "updatedAt": now_iso,
             "lastLoginAt": now_iso,
         }
+
         user_ref.set(result, merge=True)
 
     st.session_state["_bootstrapped_user"] = result
