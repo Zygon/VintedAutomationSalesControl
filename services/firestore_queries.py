@@ -18,9 +18,11 @@ except ModuleNotFoundError:
 try:
     import psycopg
     from psycopg.rows import dict_row
+    from psycopg.types.json import Json
 except ModuleNotFoundError:
     psycopg = None
     dict_row = None
+    Json = None
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -612,6 +614,13 @@ def upsert_row(table_name: str, row_id: str, data: dict[str, Any]) -> None:
         columns = list(payload.keys())
         values = [payload[c] for c in columns]
 
+        adapted_values: list[Any] = []
+        for value in values:
+            if isinstance(value, (dict, list)):
+                adapted_values.append(Json(value) if Json is not None else value)
+            else:
+                adapted_values.append(value)
+
         column_sql = ", ".join(_quote_ident(c) for c in columns)
         placeholder_sql = ", ".join(["%s"] * len(columns))
         update_sql = ", ".join(
@@ -627,7 +636,7 @@ def upsert_row(table_name: str, row_id: str, data: dict[str, Any]) -> None:
         )
 
         with conn.cursor() as cur:
-            cur.execute(sql, values)
+            cur.execute(sql, adapted_values)
         conn.commit()
         clear_all_caches()
         return
@@ -670,10 +679,7 @@ def list_user_account_rows(user_id: str, only_active: bool = False) -> list[dict
 
 
 def list_link_code_rows(account_id: str) -> list[dict[str, Any]]:
-    rows = query_rows(
-        "accountLinkCodes",
-        filters=[("accountId", "==", account_id)],
-    )
+    rows = query_rows("accountLinkCodes", filters=[("accountId", "==", account_id)])
     rows.sort(key=lambda x: str(x.get("createdAt") or ""), reverse=True)
     return rows
 
@@ -752,13 +758,6 @@ def upsert_account_link_code(code: str, data: dict[str, Any]) -> None:
     payload = dict(data)
     payload.setdefault("code", code)
     upsert_row("accountLinkCodes", code, payload)
-
-
-def claim_account_link_code_usage(code: str, used_count: int) -> None:
-    update_row_fields("accountLinkCodes", code, {
-        "usedCount": int(used_count),
-        "updatedAt": utc_now_iso(),
-    })
 
 
 def upsert_product_row(product_id: str, data: dict[str, Any]) -> None:
@@ -844,7 +843,13 @@ def reserve_next_sku(
                     next_value,
                     now_iso,
                     now_iso,
-                    {
+                    Json({
+                        "padding": padding,
+                        "generatedFor": "LISTING_HELPER",
+                        "generatedBy": generated_by,
+                        "isAssigned": False,
+                        "assignedProductId": None,
+                    }) if Json is not None else {
                         "padding": padding,
                         "generatedFor": "LISTING_HELPER",
                         "generatedBy": generated_by,
@@ -926,6 +931,7 @@ def reserve_next_sku(
     result = _tx(transaction)
     clear_all_caches()
     return result
+
 
 # =========================================================
 # Existing read helpers used by pages
