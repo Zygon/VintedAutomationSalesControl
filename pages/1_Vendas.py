@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from components.layout import apply_page_layout
+
 apply_page_layout()
 
 import pandas as pd
@@ -15,6 +14,7 @@ from services.firestore_queries import (
     load_collection_df,
     load_label_by_id,
     load_sale_items_for_sale,
+    update_sale_status,
 )
 from services.metrics import (
     format_currency,
@@ -101,8 +101,6 @@ def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) ->
     if not changed_rows:
         return 0
 
-    from services.firestore_queries import update_sale_status
-
     updated = 0
 
     for row in changed_rows:
@@ -160,8 +158,10 @@ if not sales_df.empty:
     elif "soldAt" in sales_df.columns:
         sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
-valid_sales_df = sales_df[sales_df["status"] != "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else sales_df
-canceled_sales_df = sales_df[sales_df["status"] == "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else pd.DataFrame()
+valid_sales_df = sales_df[
+    sales_df["status"] != "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else sales_df
+canceled_sales_df = sales_df[
+    sales_df["status"] == "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else pd.DataFrame()
 
 render_kpis([
     ("Registos", str(safe_count(sales_df))),
@@ -255,7 +255,7 @@ row_style_jscode = JsCode(
         if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
             return { backgroundColor: "#f8d7da" };
         }
-        
+
         if (status === "CANCELED") {
             return { backgroundColor: "#e2e3e5", color: "#41464b" };
         }

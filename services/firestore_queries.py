@@ -107,6 +107,13 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _pg_rollback_safely(conn) -> None:
+    try:
+        conn.rollback()
+    except Exception:
+        pass
+
+
 def _ensure_timezone(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
@@ -359,9 +366,13 @@ def _rows_from_postgres(
         sql += ' WHERE "accountId" = ANY(%s)'
         params.append(allowed_account_ids)
 
-    with conn.cursor() as cur:
-        cur.execute(sql, params)
-        rows = [dict(row) for row in cur.fetchall()]
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            rows = [dict(row) for row in cur.fetchall()]
+    except Exception:
+        _pg_rollback_safely(conn)
+        raise
 
     return [_guess_id_for_postgres_row(table_name, row) for row in rows]
 
@@ -531,9 +542,14 @@ def get_row_by_id(table_name: str, row_id: str) -> dict[str, Any] | None:
             f"WHERE {_quote_ident(pk_field)} = %s "
             f"LIMIT 1"
         )
-        with conn.cursor() as cur:
-            cur.execute(sql, (row_id,))
-            row = cur.fetchone()
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, (row_id,))
+                row = cur.fetchone()
+        except Exception:
+            _pg_rollback_safely(conn)
+            raise
 
         if not row:
             return None
@@ -578,9 +594,13 @@ def query_rows(
         if order_by:
             sql += f" ORDER BY {_quote_ident(order_by)} {'DESC' if descending else 'ASC'}"
 
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            rows = [dict(row) for row in cur.fetchall()]
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                rows = [dict(row) for row in cur.fetchall()]
+        except Exception:
+            _pg_rollback_safely(conn)
+            raise
 
         return [_guess_id_for_postgres_row(table_name, row) for row in rows]
 
@@ -635,9 +655,14 @@ def upsert_row(table_name: str, row_id: str, data: dict[str, Any]) -> None:
             f"ON CONFLICT ({_quote_ident(pk_field)}) DO UPDATE SET {update_sql}"
         )
 
-        with conn.cursor() as cur:
-            cur.execute(sql, adapted_values)
-        conn.commit()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, adapted_values)
+            conn.commit()
+        except Exception:
+            _pg_rollback_safely(conn)
+            raise
+
         clear_all_caches()
         return
 
@@ -780,86 +805,93 @@ def reserve_next_sku(
 
     if DB_PROVIDER == "postgres":
         conn = get_db()
-        with conn.cursor() as cur:
-            cur.execute(
-                'SELECT * FROM "skuCounters" WHERE "id" = %s FOR UPDATE',
-                (counter_id,),
-            )
-            current = cur.fetchone()
-            current_value = 0
-            created_at = now_iso
 
-            if current:
-                current_dict = dict(current)
-                current_value = int(current_dict.get("currentValue") or 0)
-                created_at = current_dict.get("createdAt") or now_iso
-
-            next_value = current_value + 1
-            next_sku = f"{prefix}{str(next_value).zfill(padding)}"
-            generated_sku_id = f"{account_id}__{next_sku}"
-
-            cur.execute(
-                """
-                INSERT INTO "skuCounters" (
-                    "id", "accountId", "prefix", "currentValue", "createdAt", "updatedAt"
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    'SELECT * FROM "skuCounters" WHERE "id" = %s FOR UPDATE',
+                    (counter_id,),
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT ("id") DO UPDATE SET
-                    "accountId" = EXCLUDED."accountId",
-                    "prefix" = EXCLUDED."prefix",
-                    "currentValue" = EXCLUDED."currentValue",
-                    "updatedAt" = EXCLUDED."updatedAt"
-                """,
-                (
-                    counter_id,
-                    account_id,
-                    prefix,
-                    next_value,
-                    created_at,
-                    now_iso,
-                ),
-            )
+                current = cur.fetchone()
+                current_value = 0
+                created_at = now_iso
 
-            cur.execute(
-                """
-                INSERT INTO "generatedSkus" (
-                    "generatedSkuId", "accountId", "sku", "prefix", "sequenceNumber",
-                    "createdAt", "updatedAt", "meta"
+                if current:
+                    current_dict = dict(current)
+                    current_value = int(current_dict.get("currentValue") or 0)
+                    created_at = current_dict.get("createdAt") or now_iso
+
+                next_value = current_value + 1
+                next_sku = f"{prefix}{str(next_value).zfill(padding)}"
+                generated_sku_id = f"{account_id}__{next_sku}"
+
+                cur.execute(
+                    """
+                    INSERT INTO "skuCounters" (
+                        "id", "accountId", "prefix", "currentValue", "createdAt", "updatedAt"
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT ("id") DO UPDATE SET
+                        "accountId" = EXCLUDED."accountId",
+                        "prefix" = EXCLUDED."prefix",
+                        "currentValue" = EXCLUDED."currentValue",
+                        "updatedAt" = EXCLUDED."updatedAt"
+                    """,
+                    (
+                        counter_id,
+                        account_id,
+                        prefix,
+                        next_value,
+                        created_at,
+                        now_iso,
+                    ),
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT ("generatedSkuId") DO UPDATE SET
-                    "accountId" = EXCLUDED."accountId",
-                    "sku" = EXCLUDED."sku",
-                    "prefix" = EXCLUDED."prefix",
-                    "sequenceNumber" = EXCLUDED."sequenceNumber",
-                    "updatedAt" = EXCLUDED."updatedAt",
-                    "meta" = EXCLUDED."meta"
-                """,
-                (
-                    generated_sku_id,
-                    account_id,
-                    next_sku,
-                    prefix,
-                    next_value,
-                    now_iso,
-                    now_iso,
-                    Json({
-                        "padding": padding,
-                        "generatedFor": "LISTING_HELPER",
-                        "generatedBy": generated_by,
-                        "isAssigned": False,
-                        "assignedProductId": None,
-                    }) if Json is not None else {
-                        "padding": padding,
-                        "generatedFor": "LISTING_HELPER",
-                        "generatedBy": generated_by,
-                        "isAssigned": False,
-                        "assignedProductId": None,
-                    },
-                ),
-            )
 
-        conn.commit()
+                cur.execute(
+                    """
+                    INSERT INTO "generatedSkus" (
+                        "generatedSkuId", "accountId", "sku", "prefix", "sequenceNumber",
+                        "createdAt", "updatedAt", "meta"
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT ("generatedSkuId") DO UPDATE SET
+                        "accountId" = EXCLUDED."accountId",
+                        "sku" = EXCLUDED."sku",
+                        "prefix" = EXCLUDED."prefix",
+                        "sequenceNumber" = EXCLUDED."sequenceNumber",
+                        "updatedAt" = EXCLUDED."updatedAt",
+                        "meta" = EXCLUDED."meta"
+                    """,
+                    (
+                        generated_sku_id,
+                        account_id,
+                        next_sku,
+                        prefix,
+                        next_value,
+                        now_iso,
+                        now_iso,
+                        Json({
+                            "padding": padding,
+                            "generatedFor": "LISTING_HELPER",
+                            "generatedBy": generated_by,
+                            "isAssigned": False,
+                            "assignedProductId": None,
+                        }) if Json is not None else {
+                            "padding": padding,
+                            "generatedFor": "LISTING_HELPER",
+                            "generatedBy": generated_by,
+                            "isAssigned": False,
+                            "assignedProductId": None,
+                        },
+                    ),
+                )
+
+            conn.commit()
+
+        except Exception:
+            _pg_rollback_safely(conn)
+            raise
+
         clear_all_caches()
 
         return {
