@@ -251,7 +251,6 @@ def _resolve_firebase_credentials() -> credentials.Certificate:
 
     try:
         from app.config import FIREBASE_SERVICE_ACCOUNT_FILE as BACKEND_FIREBASE_SERVICE_ACCOUNT_FILE  # type: ignore
-
         backend_path = Path(BACKEND_FIREBASE_SERVICE_ACCOUNT_FILE)
         if backend_path.exists():
             return credentials.Certificate(str(backend_path.resolve()))
@@ -280,6 +279,41 @@ def get_db():
         firebase_admin.initialize_app(cred)
 
     return firestore.client()
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def _postgres_table_columns(table_name: str) -> set[str]:
+    if DB_PROVIDER != "postgres":
+        return set()
+
+    conn = get_db()
+    sql = """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = %s
+    """
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (table_name,))
+            rows = cur.fetchall()
+    except Exception:
+        _pg_rollback_safely(conn)
+        raise
+
+    return {str(row["column_name"]) if isinstance(row, dict) else str(row[0]) for row in rows}
+
+
+def _filter_payload_to_real_columns(table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    if DB_PROVIDER != "postgres":
+        return payload
+
+    real_columns = _postgres_table_columns(table_name)
+    if not real_columns:
+        return payload
+
+    return {k: v for k, v in payload.items() if k in real_columns}
 
 
 def _quote_ident(name: str) -> str:
@@ -630,6 +664,8 @@ def upsert_row(table_name: str, row_id: str, data: dict[str, Any]) -> None:
     payload[pk_field] = row_id
 
     if DB_PROVIDER == "postgres":
+        payload = _filter_payload_to_real_columns(table_name, payload)
+
         conn = get_db()
         columns = list(payload.keys())
         values = [payload[c] for c in columns]
