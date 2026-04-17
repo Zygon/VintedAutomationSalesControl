@@ -39,17 +39,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-DB_PROVIDER = os.getenv("DB_PROVIDER", "firebase").strip().lower()
-
-FIREBASE_SERVICE_ACCOUNT_FILE = os.getenv("FIREBASE_SERVICE_ACCOUNT_FILE")
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "").strip()
-POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-POSTGRES_DB = os.getenv("POSTGRES_DB", "").strip()
-POSTGRES_USER = os.getenv("POSTGRES_USER", "").strip()
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "").strip()
-POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE", "require").strip()
+DB_PROVIDER = os.getenv("DB_PROVIDER", "postgres").strip().lower()
 
 
 @dataclass
