@@ -38,6 +38,8 @@ STATUS_OPTIONS = [
     "ERROR",
     "CANCELED",
     "PRINT_ERROR",
+    "IN_PRODUCTION",
+    "PACKAGING",
 ]
 
 
