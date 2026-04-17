@@ -12,7 +12,6 @@ from components.charts import render_bar_chart, render_line_chart
 from components.filters import get_active_filters, render_global_filters
 from components.tables import render_dataframe, render_kpis
 from services.firestore_queries import (
-    get_db,
     load_collection_df,
     load_label_by_id,
     load_sale_items_for_sale,
@@ -102,7 +101,8 @@ def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) ->
     if not changed_rows:
         return 0
 
-    db = get_db()
+    from services.firestore_queries import update_sale_status
+
     updated = 0
 
     for row in changed_rows:
@@ -112,10 +112,7 @@ def _update_sale_statuses(original_df: pd.DataFrame, edited_df: pd.DataFrame) ->
         if not sale_id or not new_status:
             continue
 
-        db.collection("sales").document(str(sale_id)).set(
-            {"status": str(new_status).strip()},
-            merge=True,
-        )
+        update_sale_status(str(sale_id), str(new_status).strip())
         updated += 1
 
     return updated

@@ -5,11 +5,16 @@ import string
 from datetime import datetime, timezone
 from typing import Any
 
-from firebase_admin import firestore
-from google.cloud.firestore_v1.base_query import FieldFilter
-
 from services.access_service import get_role_for_account
-from services.firestore_queries import get_db
+from services.firestore_queries import (
+    get_account_by_id,
+    get_link_code_by_code,
+    get_user_account_by_id,
+    list_link_code_rows,
+    list_user_account_rows,
+    upsert_account_link_code,
+    upsert_user_account,
+)
 
 
 class AccountLinkError(Exception):
@@ -37,21 +42,7 @@ def _generate_code_value() -> str:
 
 
 def list_link_codes_for_account(account_id: str) -> list[dict[str, Any]]:
-    db = get_db()
-    docs = (
-        db.collection("accountLinkCodes")
-        .where(filter=FieldFilter("accountId", "==", account_id))
-        .stream()
-    )
-
-    rows: list[dict[str, Any]] = []
-    for doc in docs:
-        data = doc.to_dict() or {}
-        data.setdefault("id", doc.id)
-        rows.append(data)
-
-    rows.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
-    return rows
+    return list_link_code_rows(account_id)
 
 
 def create_link_code(
@@ -64,32 +55,33 @@ def create_link_code(
     if role != "OWNER":
         raise AccountLinkError("Só um OWNER pode gerar códigos de associação.")
 
-    db = get_db()
-    account_doc = db.collection("accounts").document(account_id).get()
-    if not account_doc.exists:
+    account = get_account_by_id(account_id)
+    if not account:
         raise AccountLinkError("A conta operacional não existe.")
 
-    if (account_doc.to_dict() or {}).get("status") != "ACTIVE":
+    if account.get("status") != "ACTIVE":
         raise AccountLinkError("A conta operacional não está ativa.")
 
     for _ in range(20):
         code = _generate_code_value()
-        ref = db.collection("accountLinkCodes").document(code)
-        if not ref.get().exists:
-            now_iso = utc_now_iso()
-            payload = {
-                "code": code,
-                "accountId": account_id,
-                "status": "ACTIVE",
-                "createdAt": now_iso,
-                "updatedAt": now_iso,
-                "expiresAt": expires_at,
-                "maxUses": int(max_uses),
-                "usedCount": 0,
-                "createdByUserId": user_id,
-            }
-            ref.set(payload)
-            return payload
+        existing = get_link_code_by_code(code)
+        if existing:
+            continue
+
+        now_iso = utc_now_iso()
+        payload = {
+            "code": code,
+            "accountId": account_id,
+            "status": "ACTIVE",
+            "createdAt": now_iso,
+            "updatedAt": now_iso,
+            "expiresAt": expires_at,
+            "maxUses": int(max_uses),
+            "usedCount": 0,
+            "createdByUserId": user_id,
+        }
+        upsert_account_link_code(code, payload)
+        return payload
 
     raise AccountLinkError("Não foi possível gerar um código único.")
 
@@ -108,14 +100,9 @@ def claim_link_code(user_id: str, code: str) -> dict[str, Any]:
     if not normalized_code:
         raise AccountLinkError("Código inválido.")
 
-    db = get_db()
-    code_ref = db.collection("accountLinkCodes").document(normalized_code)
-    code_doc = code_ref.get()
-
-    if not code_doc.exists:
+    code_data = get_link_code_by_code(normalized_code)
+    if not code_data:
         raise AccountLinkError("Código não encontrado.")
-
-    code_data = code_doc.to_dict() or {}
 
     if code_data.get("status") != "ACTIVE":
         raise AccountLinkError("Código inativo.")
@@ -133,52 +120,42 @@ def claim_link_code(user_id: str, code: str) -> dict[str, Any]:
     if not account_id:
         raise AccountLinkError("Código sem account associada.")
 
-    account_doc = db.collection("accounts").document(account_id).get()
-    if not account_doc.exists:
+    account = get_account_by_id(str(account_id))
+    if not account:
         raise AccountLinkError("A conta operacional associada não existe.")
 
-    account_data = account_doc.to_dict() or {}
-    if account_data.get("status") != "ACTIVE":
+    if account.get("status") != "ACTIVE":
         raise AccountLinkError("A conta operacional não está ativa.")
 
     rel_id = f"{user_id}__{account_id}"
-    rel_ref = db.collection("userAccounts").document(rel_id)
-    existing_rel = rel_ref.get()
+    existing_rel = get_user_account_by_id(rel_id)
 
     now_iso = utc_now_iso()
 
-    if existing_rel.exists:
-        rel_data = existing_rel.to_dict() or {}
-        if rel_data.get("status") == "ACTIVE":
-            raise AccountLinkError("Esta conta já está associada ao utilizador.")
+    if existing_rel and existing_rel.get("status") == "ACTIVE":
+        raise AccountLinkError("Esta conta já está associada ao utilizador.")
 
-    existing_active = (
-        db.collection("userAccounts")
-        .where(filter=FieldFilter("userId", "==", user_id))
-        .where(filter=FieldFilter("status", "==", "ACTIVE"))
-        .stream()
-    )
-    has_any_active = any(True for _ in existing_active)
+    existing_active = list_user_account_rows(user_id, only_active=True)
+    has_any_active = len(existing_active) > 0
 
     rel_payload = {
+        "id": rel_id,
         "userAccountId": rel_id,
         "userId": user_id,
         "accountId": account_id,
         "role": "VIEWER",
         "isDefault": not has_any_active,
         "status": "ACTIVE",
-        "createdAt": now_iso,
+        "createdAt": now_iso if not existing_rel else existing_rel.get("createdAt", now_iso),
         "updatedAt": now_iso,
         "linkedByCode": normalized_code,
     }
 
-    batch = db.batch()
-    batch.set(rel_ref, rel_payload, merge=True)
-    batch.set(code_ref, {
+    upsert_user_account(rel_id, rel_payload)
+    upsert_account_link_code(normalized_code, {
         "usedCount": used_count + 1,
         "updatedAt": now_iso,
-    }, merge=True)
-    batch.commit()
+    })
 
     return rel_payload
 
@@ -189,18 +166,15 @@ def revoke_link_code(user_id: str, account_id: str, code: str):
         raise AccountLinkError("Só um OWNER pode revogar códigos.")
 
     normalized_code = _normalize_code(code)
-    db = get_db()
-    ref = db.collection("accountLinkCodes").document(normalized_code)
-    doc = ref.get()
+    data = get_link_code_by_code(normalized_code)
 
-    if not doc.exists:
+    if not data:
         raise AccountLinkError("Código não encontrado.")
 
-    data = doc.to_dict() or {}
     if data.get("accountId") != account_id:
         raise AccountLinkError("Esse código não pertence à conta selecionada.")
 
-    ref.set({
+    upsert_account_link_code(normalized_code, {
         "status": "REVOKED",
         "updatedAt": utc_now_iso(),
-    }, merge=True)
+    })
