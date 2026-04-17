@@ -57,12 +57,12 @@ def upsert_product(
     upsert_product_row(product_id, {
         "productId": product_id,
         "accountId": account_id,
-        "name": name.strip(),
-        "normalizedName": normalized_name,
+        "title": name.strip(),
+        "titleNormalized": normalized_name,
         "category": category.strip() or None,
-        "latestSku": (latest_sku or "").strip() or None,
-        "descriptionTemplate": (description_template or "").strip() or None,
-        "isActive": bool(is_active),
+        "sku": (latest_sku or "").strip() or None,
+        "description": (description_template or "").strip() or None,
+        "status": "ACTIVE" if is_active else "INACTIVE",
         "updatedAt": now_iso,
         "createdAt": now_iso,
     })

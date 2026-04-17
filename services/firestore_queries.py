@@ -802,15 +802,13 @@ def reserve_next_sku(
             cur.execute(
                 """
                 INSERT INTO "skuCounters" (
-                    "id", "accountId", "prefix", "currentValue", "padding", "latestSku", "createdAt", "updatedAt"
+                    "id", "accountId", "prefix", "currentValue", "createdAt", "updatedAt"
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT ("id") DO UPDATE SET
                     "accountId" = EXCLUDED."accountId",
                     "prefix" = EXCLUDED."prefix",
                     "currentValue" = EXCLUDED."currentValue",
-                    "padding" = EXCLUDED."padding",
-                    "latestSku" = EXCLUDED."latestSku",
                     "updatedAt" = EXCLUDED."updatedAt"
                 """,
                 (
@@ -818,8 +816,6 @@ def reserve_next_sku(
                     account_id,
                     prefix,
                     next_value,
-                    padding,
-                    next_sku,
                     created_at,
                     now_iso,
                 ),
@@ -828,34 +824,33 @@ def reserve_next_sku(
             cur.execute(
                 """
                 INSERT INTO "generatedSkus" (
-                    "generatedSkuId", "accountId", "sku", "numericValue", "prefix",
-                    "isAssigned", "assignedProductId", "generatedFor", "generatedBy",
-                    "createdAt", "updatedAt"
+                    "generatedSkuId", "accountId", "sku", "prefix", "sequenceNumber",
+                    "createdAt", "updatedAt", "meta"
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT ("generatedSkuId") DO UPDATE SET
                     "accountId" = EXCLUDED."accountId",
                     "sku" = EXCLUDED."sku",
-                    "numericValue" = EXCLUDED."numericValue",
                     "prefix" = EXCLUDED."prefix",
-                    "isAssigned" = EXCLUDED."isAssigned",
-                    "assignedProductId" = EXCLUDED."assignedProductId",
-                    "generatedFor" = EXCLUDED."generatedFor",
-                    "generatedBy" = EXCLUDED."generatedBy",
-                    "updatedAt" = EXCLUDED."updatedAt"
+                    "sequenceNumber" = EXCLUDED."sequenceNumber",
+                    "updatedAt" = EXCLUDED."updatedAt",
+                    "meta" = EXCLUDED."meta"
                 """,
                 (
                     generated_sku_id,
                     account_id,
                     next_sku,
-                    next_value,
                     prefix,
-                    False,
-                    None,
-                    "LISTING_HELPER",
-                    generated_by,
+                    next_value,
                     now_iso,
                     now_iso,
+                    {
+                        "padding": padding,
+                        "generatedFor": "LISTING_HELPER",
+                        "generatedBy": generated_by,
+                        "isAssigned": False,
+                        "assignedProductId": None,
+                    },
                 ),
             )
 
@@ -891,8 +886,6 @@ def reserve_next_sku(
                 "accountId": account_id,
                 "prefix": prefix,
                 "currentValue": next_value,
-                "padding": padding,
-                "latestSku": next_sku,
                 "updatedAt": now_iso,
                 "createdAt": now_iso if not snap.exists else firestore.DELETE_FIELD,
             },
@@ -906,14 +899,17 @@ def reserve_next_sku(
                 "generatedSkuId": f"{account_id}__{next_sku}",
                 "accountId": account_id,
                 "sku": next_sku,
-                "numericValue": next_value,
                 "prefix": prefix,
-                "isAssigned": False,
-                "assignedProductId": None,
-                "generatedFor": "LISTING_HELPER",
-                "generatedBy": generated_by,
+                "sequenceNumber": next_value,
                 "createdAt": now_iso,
                 "updatedAt": now_iso,
+                "meta": {
+                    "padding": padding,
+                    "generatedFor": "LISTING_HELPER",
+                    "generatedBy": generated_by,
+                    "isAssigned": False,
+                    "assignedProductId": None,
+                },
             },
             merge=True,
         )
@@ -930,7 +926,6 @@ def reserve_next_sku(
     result = _tx(transaction)
     clear_all_caches()
     return result
-
 
 # =========================================================
 # Existing read helpers used by pages
