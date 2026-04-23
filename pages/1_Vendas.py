@@ -253,6 +253,14 @@ row_style_jscode = JsCode(
         if (status === "PRINT_DISPATCHED") {
             return { backgroundColor: "#fff3cd", color: "#856404" };
         }
+        
+        if (status === "IN_PRODUCTION") {
+            return { backgroundColor: "#f8d7da", color: "#856404" };
+        }
+        
+        if (status === "PACKAGING") {
+            return { backgroundColor: "#fff3cd", color: "#856404" };
+        }
 
         if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
             return { backgroundColor: "#f8d7da" };
