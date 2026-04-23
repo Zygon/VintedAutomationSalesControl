@@ -1,8 +1,10 @@
+from components.constants import STATUS_COLORS
 from components.layout import apply_page_layout
 
 apply_page_layout()
 
 import pandas as pd
+import json
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
@@ -237,43 +239,22 @@ gb.configure_grid_options(
     animateRows=False,
 )
 
-row_style_jscode = JsCode(
-    """
-    function(params) {
-        const status = (params.data.status || "").toUpperCase();
 
-        if (status === "COMPLETED") {
-            return { backgroundColor: "#d1e7dd" };
-        }
 
-        if (status === "SHIPPED") {
-            return { backgroundColor: "#cfe2ff" };
-        }
+status_colors_js = json.dumps(STATUS_COLORS)
 
-        if (status === "PRINT_DISPATCHED") {
-            return { backgroundColor: "#fff3cd", color: "#856404" };
-        }
-        
-        if (status === "IN_PRODUCTION") {
-            return { backgroundColor: "#f8d7da", color: "#856404" };
-        }
-        
-        if (status === "PACKAGING") {
-            return { backgroundColor: "#fff3cd", color: "#856404" };
-        }
+row_style_jscode = JsCode(f"""
+function(params) {{
+    const status = (params.data.status || "").toUpperCase();
+    const colors = {status_colors_js};
 
-        if (status === "WAITING_LABEL" || status === "READY_TO_PRINT") {
-            return { backgroundColor: "#f8d7da" };
-        }
+    if (colors[status]) {{
+        return {{ backgroundColor: colors[status] }};
+    }}
 
-        if (status === "CANCELED") {
-            return { backgroundColor: "#e2e3e5", color: "#41464b" };
-        }
-
-        return {};
-    }
-    """
-)
+    return {{}};
+}}
+""")
 
 gb.configure_grid_options(getRowStyle=row_style_jscode)
 
