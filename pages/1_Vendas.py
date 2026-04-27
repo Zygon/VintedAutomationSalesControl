@@ -87,11 +87,8 @@ WEEKDAY_LABELS_PT = {
 
 DETAIL_COLUMN_ID = "__view_detail__"
 DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
-DETAIL_ICON = "👁"
 DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
-DETAIL_MODAL_TOKEN_KEY = "sales_detail_modal_token"
-DETAIL_MODAL_OPEN_KEY = "sales_detail_modal_open"
-DETAIL_PAGE_INIT_KEY = "sales_detail_page_initialized"
+DETAIL_MODAL_NONCE_KEY = "sales_detail_modal_nonce"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -675,8 +672,7 @@ def _render_sale_detail_modal(
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
         st.session_state[DETAIL_MODAL_STATE_KEY] = None
-        st.session_state[DETAIL_MODAL_TOKEN_KEY] = None
-        st.session_state[DETAIL_MODAL_OPEN_KEY] = False
+        st.session_state[DETAIL_MODAL_NONCE_KEY] = None
         st.rerun()
 
 
@@ -692,13 +688,6 @@ date_range = filters["dateRange"]
 period_mode = st.session_state.get("period_mode", "Mês")
 
 st.title("Vendas")
-
-if DETAIL_PAGE_INIT_KEY not in st.session_state:
-    st.session_state[DETAIL_PAGE_INIT_KEY] = True
-    st.session_state[DETAIL_MODAL_STATE_KEY] = None
-    st.session_state[DETAIL_MODAL_TOKEN_KEY] = None
-    st.session_state[DETAIL_MODAL_OPEN_KEY] = False
-
 
 sales_df = load_collection_df(
     "sales",
@@ -817,8 +806,8 @@ support_columns = [
 
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
-grid_df.insert(0, DETAIL_COLUMN_ID, DETAIL_ICON)
-grid_df[DETAIL_TRIGGER_COLUMN_ID] = ""
+grid_df.insert(0, DETAIL_TRIGGER_COLUMN_ID, "")
+grid_df.insert(0, DETAIL_COLUMN_ID, "")
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -834,38 +823,22 @@ detail_button_renderer = JsCode(
         init(params) {{
             this.params = params;
             this.eGui = document.createElement('button');
-            this.eGui.innerText = '{DETAIL_ICON}';
+            this.eGui.innerHTML = '{"👁"}';
             this.eGui.setAttribute('title', 'Ver detalhe');
             this.eGui.style.width = '100%';
-            this.eGui.style.height = '100%';
+            this.eGui.style.height = '30px';
             this.eGui.style.border = 'none';
             this.eGui.style.background = 'transparent';
             this.eGui.style.cursor = 'pointer';
             this.eGui.style.fontSize = '18px';
-            this.eGui.style.padding = '0';
-            this.eGui.style.margin = '0';
-
-            this.clickHandler = () => {{
-                const saleId = String((params.data && params.data.saleId) || '');
-                if (!saleId) {{
-                    return;
-                }}
-
-                const token = saleId + '__' + Date.now().toString();
+            this.eGui.style.lineHeight = '1';
+            this.eGui.addEventListener('click', () => {{
+                const token = String(params.data.saleId || '') + '__' + String(Date.now());
                 params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', token);
-            }};
-
-            this.eGui.addEventListener('click', this.clickHandler);
+            }});
         }}
-
         getGui() {{
             return this.eGui;
-        }}
-
-        destroy() {{
-            if (this.eGui && this.clickHandler) {{
-                this.eGui.removeEventListener('click', this.clickHandler);
-            }}
         }}
     }}
     """
@@ -908,8 +881,8 @@ gb.configure_grid_options(
     rowHeight=40,
     animateRows=False,
     suppressRowClickSelection=True,
-    suppressCellFocus=False,
     rowSelection="single",
+    suppressCellFocus=False,
 )
 
 status_colors_js = json.dumps(STATUS_COLORS)
@@ -945,7 +918,6 @@ grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.VALUE_CHANGED,
-    data_return_mode="AS_INPUT",
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -955,21 +927,25 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
+modal_sale_id = None
+modal_nonce = None
 
 if not edited_df.empty and DETAIL_TRIGGER_COLUMN_ID in edited_df.columns:
-    trigger_series = edited_df[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str).str.strip()
-    triggered_rows = edited_df.loc[trigger_series != ""]
+    trigger_rows = edited_df[
+        edited_df[DETAIL_TRIGGER_COLUMN_ID].astype(str).str.contains("__", na=False)
+    ]
 
-    if not triggered_rows.empty:
-        last_trigger = str(triggered_rows.iloc[-1][DETAIL_TRIGGER_COLUMN_ID])
-        last_sale_id = str(triggered_rows.iloc[-1].get("saleId") or "").strip()
-
-        if last_sale_id and last_trigger != str(st.session_state.get(DETAIL_MODAL_TOKEN_KEY) or ""):
-            st.session_state[DETAIL_MODAL_STATE_KEY] = last_sale_id
-            st.session_state[DETAIL_MODAL_TOKEN_KEY] = last_trigger
+    if not trigger_rows.empty:
+        trigger_value = str(trigger_rows.iloc[0][DETAIL_TRIGGER_COLUMN_ID])
+        sale_id_part, _, nonce_part = trigger_value.partition("__")
+        if sale_id_part and nonce_part:
+            modal_sale_id = sale_id_part
+            modal_nonce = trigger_value
 
 if not edited_df.empty:
-    edited_df = edited_df.drop(columns=[c for c in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns])
+    for helper_col in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID]:
+        if helper_col in edited_df.columns:
+            edited_df = edited_df.drop(columns=[helper_col])
 
 save_col, info_col = st.columns([1, 3])
 
@@ -990,10 +966,14 @@ with info_col:
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-modal_sale_id = str(st.session_state.get(DETAIL_MODAL_STATE_KEY) or "").strip()
-if bool(st.session_state.get(DETAIL_MODAL_OPEN_KEY, False)) and modal_sale_id:
+if modal_nonce and modal_nonce != st.session_state.get(DETAIL_MODAL_NONCE_KEY):
+    st.session_state[DETAIL_MODAL_STATE_KEY] = modal_sale_id
+    st.session_state[DETAIL_MODAL_NONCE_KEY] = modal_nonce
+
+current_modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
+if current_modal_sale_id:
     _render_sale_detail_modal(
-        sale_id=modal_sale_id,
+        sale_id=str(current_modal_sale_id),
         sales_df=sales_df,
         account_filter=account_filter,
         allowed_account_ids=allowed_account_ids,
