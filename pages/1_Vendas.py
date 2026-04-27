@@ -130,6 +130,8 @@ WEEKDAY_LABELS_PT = {
 DETAIL_COLUMN_ID = "__view_detail__"
 DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
 DETAIL_ICON = "👁"
+DETAIL_MODAL_SALE_ID_KEY = "sales_detail_modal_sale_id"
+DETAIL_LAST_TRIGGER_KEY = "sales_detail_last_trigger_token"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -263,19 +265,19 @@ def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
 def _to_naive_timestamp(value):
     ts = pd.to_datetime(value, errors="coerce", utc=True)
     if pd.isna(ts):
-        return None
+        return None, None, None, None, None, None, None, None, None
     return pd.Timestamp(ts).tz_convert(None)
 
 
 def _extract_current_range(date_range):
     if not isinstance(date_range, dict):
-        return None, None
+        return None, None, None, None, None, None, None, None, None, None
 
     start = _to_naive_timestamp(date_range.get("start"))
     end = _to_naive_timestamp(date_range.get("end"))
 
     if start is None or end is None:
-        return None, None
+        return None, None, None, None, None, None, None, None, None, None
 
     if start > end:
         start, end = end, start
@@ -646,9 +648,9 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _extract_detail_sale_id(original_df: pd.DataFrame, edited_df: pd.DataFrame):
+def _extract_detail_trigger(original_df: pd.DataFrame, edited_df: pd.DataFrame):
     if original_df.empty or edited_df.empty:
-        return None
+        return None, None, None, None, None, None, None, None, None
 
     if "saleId" not in original_df.columns or "saleId" not in edited_df.columns:
         return None
@@ -689,7 +691,7 @@ def _extract_detail_sale_id(original_df: pd.DataFrame, edited_df: pd.DataFrame):
     if not sale_id:
         return None
 
-    return sale_id
+    return sale_id, token
 
 
 @st.dialog("Detalhe da venda", width="large")
@@ -703,6 +705,9 @@ def _render_sale_detail_modal(
 
     if selected_sale.empty:
         st.warning("Não foi possível localizar a venda selecionada.")
+        if st.button("Fechar", key=f"close_sale_detail_modal_missing_{sale_id}"):
+            st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
+            st.rerun()
         return
 
     sale_row = selected_sale.iloc[0].to_dict()
@@ -758,12 +763,19 @@ def _render_sale_detail_modal(
             render_dataframe(label_df)
 
     st.divider()
-    st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}")
+    if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
+        st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
+        st.rerun()
 
 
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
+
+if DETAIL_MODAL_SALE_ID_KEY not in st.session_state:
+    st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
+if DETAIL_LAST_TRIGGER_KEY not in st.session_state:
+    st.session_state[DETAIL_LAST_TRIGGER_KEY] = None
 
 filters = get_active_filters()
 selected_account_id = filters["accountId"]
@@ -1022,7 +1034,11 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
-detail_sale_id = _extract_detail_sale_id(grid_df, edited_df)
+detail_sale_id, detail_trigger_token = _extract_detail_trigger(grid_df, edited_df)
+
+if detail_sale_id and detail_trigger_token != st.session_state.get(DETAIL_LAST_TRIGGER_KEY):
+    st.session_state[DETAIL_MODAL_SALE_ID_KEY] = str(detail_sale_id)
+    st.session_state[DETAIL_LAST_TRIGGER_KEY] = str(detail_trigger_token)
 
 if not edited_df.empty:
     drop_cols = [c for c in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns]
@@ -1043,9 +1059,10 @@ with save_col:
 
 
 
-if detail_sale_id:
+modal_sale_id = st.session_state.get(DETAIL_MODAL_SALE_ID_KEY)
+if modal_sale_id:
     _render_sale_detail_modal(
-        sale_id=str(detail_sale_id),
+        sale_id=str(modal_sale_id),
         sales_df=sales_df,
         account_filter=account_filter,
         allowed_account_ids=allowed_account_ids,
