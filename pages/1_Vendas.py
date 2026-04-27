@@ -191,41 +191,22 @@ def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _extract_date_range(date_range):
-    if date_range is None:
+def _to_naive_timestamp(value):
+    ts = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(ts):
+        return None
+    return pd.Timestamp(ts).tz_convert(None)
+
+
+def _extract_current_range(date_range):
+    if not isinstance(date_range, dict):
         return None, None
 
-    start_raw = None
-    end_raw = None
+    start = _to_naive_timestamp(date_range.get("start"))
+    end = _to_naive_timestamp(date_range.get("end"))
 
-    if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
-        start_raw, end_raw = date_range[0], date_range[1]
-
-    elif isinstance(date_range, dict):
-        for start_key, end_key in [
-            ("start", "end"),
-            ("from", "to"),
-            ("date_from", "date_to"),
-            ("startDate", "endDate"),
-            ("start_date", "end_date"),
-            ("value", "value"),
-        ]:
-            if start_key in date_range and end_key in date_range:
-                start_raw = date_range.get(start_key)
-                end_raw = date_range.get(end_key)
-                break
-
-    if start_raw is None or end_raw is None:
+    if start is None or end is None:
         return None, None
-
-    start = pd.to_datetime(start_raw, errors="coerce")
-    end = pd.to_datetime(end_raw, errors="coerce")
-
-    if pd.isna(start) or pd.isna(end):
-        return None, None
-
-    start = pd.Timestamp(start)
-    end = pd.Timestamp(end)
 
     if start > end:
         start, end = end, start
@@ -233,163 +214,53 @@ def _extract_date_range(date_range):
     return start, end
 
 
-def _normalize_period_mode(value):
-    if value is None:
-        return None
-
-    text = str(value).strip().lower()
-
-    mapping = {
-        "day": "day",
-        "dia": "day",
-        "daily": "day",
-        "1d": "day",
-        "today": "day",
-        "week": "week",
-        "semana": "week",
-        "weekly": "week",
-        "7d": "week",
-        "month": "month",
-        "mes": "month",
-        "mês": "month",
-        "monthly": "month",
-        "30d": "month",
-        "31d": "month",
-    }
-
-    return mapping.get(text)
-
-
-def _find_period_mode_deep(value):
-    normalized = _normalize_period_mode(value)
-    if normalized:
-        return normalized
-
-    if isinstance(value, dict):
-        preferred_keys = [
-            "period",
-            "periodType",
-            "granularity",
-            "groupBy",
-            "interval",
-            "rangeType",
-            "preset",
-            "datePreset",
-            "selectedPeriod",
-            "mode",
-            "type",
-            "label",
-        ]
-
-        for key in preferred_keys:
-            if key in value:
-                found = _find_period_mode_deep(value.get(key))
-                if found:
-                    return found
-
-        for nested_value in value.values():
-            found = _find_period_mode_deep(nested_value)
-            if found:
-                return found
-
-    if isinstance(value, (list, tuple, set)):
-        for item in value:
-            found = _find_period_mode_deep(item)
-            if found:
-                return found
-
-    return None
-
-
-def _extract_period_mode(filters: dict, raw_date_range):
-    found = _find_period_mode_deep(filters)
-    if found:
-        return found
-
-    found = _find_period_mode_deep(raw_date_range)
-    if found:
-        return found
-
-    return None
-
-
-def _month_start(ts: pd.Timestamp) -> pd.Timestamp:
-    ts = pd.Timestamp(ts)
+def _start_of_month(ts: pd.Timestamp) -> pd.Timestamp:
     return pd.Timestamp(year=ts.year, month=ts.month, day=1)
 
 
-def _month_end(ts: pd.Timestamp) -> pd.Timestamp:
-    start = _month_start(ts)
-    next_month = start + pd.offsets.MonthBegin(1)
+def _end_of_month(ts: pd.Timestamp) -> pd.Timestamp:
+    month_start = _start_of_month(ts)
+    next_month = month_start + pd.offsets.MonthBegin(1)
     return pd.Timestamp(next_month) - pd.Timedelta(microseconds=1)
 
 
-def _week_start(ts: pd.Timestamp) -> pd.Timestamp:
-    ts = pd.Timestamp(ts)
-    base = pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
-    return base - pd.Timedelta(days=base.weekday())
+def _range_dict(start: pd.Timestamp, end: pd.Timestamp) -> dict:
+    return {
+        "start": start.tz_localize("UTC").to_pydatetime(),
+        "end": end.tz_localize("UTC").to_pydatetime(),
+    }
 
 
-def _week_end(ts: pd.Timestamp) -> pd.Timestamp:
-    return _week_start(ts) + pd.Timedelta(days=7) - pd.Timedelta(microseconds=1)
+def _previous_range_for_mode(current_start: pd.Timestamp, current_end: pd.Timestamp, period_mode: str):
+    if period_mode == "Dia":
+        return (
+            current_start - pd.Timedelta(days=1),
+            current_end - pd.Timedelta(days=1),
+        )
 
+    if period_mode == "Semana":
+        return (
+            current_start - pd.Timedelta(days=7),
+            current_end - pd.Timedelta(days=7),
+        )
 
-def _day_start(ts: pd.Timestamp) -> pd.Timestamp:
-    ts = pd.Timestamp(ts)
-    return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
+    if period_mode == "Mês":
+        prev_month_anchor = current_start - pd.offsets.MonthBegin(1)
+        prev_month_anchor = pd.Timestamp(prev_month_anchor)
 
+        prev_start = _start_of_month(prev_month_anchor)
+        prev_month_end = _end_of_month(prev_month_anchor)
 
-def _day_end(ts: pd.Timestamp) -> pd.Timestamp:
-    return _day_start(ts) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+        same_elapsed = current_end - current_start
+        prev_end_candidate = prev_start + same_elapsed
+        prev_end = min(prev_end_candidate, prev_month_end)
 
-
-def _resolve_effective_period(date_range, period_mode):
-    raw_start, raw_end = _extract_date_range(date_range)
-
-    if raw_start is None or raw_end is None:
-        return None, None
-
-    anchor = raw_start
-
-    if period_mode == "day":
-        return _day_start(anchor), _day_end(anchor)
-
-    if period_mode == "week":
-        return _week_start(anchor), _week_end(anchor)
-
-    if period_mode == "month":
-        return _month_start(anchor), _month_end(anchor)
-
-    end = raw_end
-    if (
-        end.hour == 0
-        and end.minute == 0
-        and end.second == 0
-        and end.microsecond == 0
-    ):
-        end = end + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
-
-    return raw_start, end
-
-
-def _previous_period(current_start: pd.Timestamp, current_end: pd.Timestamp, period_mode):
-    if period_mode == "day":
-        previous_anchor = current_start - pd.Timedelta(days=1)
-        return _day_start(previous_anchor), _day_end(previous_anchor)
-
-    if period_mode == "week":
-        previous_anchor = current_start - pd.Timedelta(days=7)
-        return _week_start(previous_anchor), _week_end(previous_anchor)
-
-    if period_mode == "month":
-        previous_anchor = current_start - pd.offsets.MonthBegin(1)
-        previous_anchor = pd.Timestamp(previous_anchor)
-        return _month_start(previous_anchor), _month_end(previous_anchor)
+        return prev_start, prev_end
 
     duration = current_end - current_start
-    previous_end = current_start - pd.Timedelta(microseconds=1)
-    previous_start = previous_end - duration
-    return previous_start, previous_end
+    prev_end = current_start - pd.Timedelta(microseconds=1)
+    prev_start = prev_end - duration
+    return prev_start, prev_end
 
 
 def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
@@ -397,14 +268,14 @@ def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
         return pd.Series(dtype="datetime64[ns]")
 
     if "soldAtParsed" in df.columns:
-        series = pd.to_datetime(df["soldAtParsed"], errors="coerce")
+        series = pd.to_datetime(df["soldAtParsed"], errors="coerce", utc=True)
         if series.notna().any():
-            return series
+            return series.dt.tz_convert(None)
 
     if "soldAt" in df.columns:
-        series = pd.to_datetime(df["soldAt"], errors="coerce")
+        series = pd.to_datetime(df["soldAt"], errors="coerce", utc=True)
         if series.notna().any():
-            return series
+            return series.dt.tz_convert(None)
 
     return pd.Series(dtype="datetime64[ns]")
 
@@ -419,66 +290,42 @@ def _get_numeric_value_series(df: pd.DataFrame) -> pd.Series:
     return pd.Series([0.0] * len(df), index=df.index, dtype="float64")
 
 
-def _chart_bucket_for_mode(period_mode, start: pd.Timestamp, end: pd.Timestamp) -> str:
-    if period_mode == "day":
-        return "hour"
-
-    if period_mode == "week":
-        return "day"
-
-    if period_mode == "month":
-        return "day"
-
-    total_days = max((end - start).total_seconds() / 86400, 0)
-    if total_days <= 1.01:
+def _chart_bucket_for_mode(period_mode: str) -> str:
+    if period_mode == "Dia":
         return "hour"
 
     return "day"
 
 
 def _truncate_to_hour(series: pd.Series) -> pd.Series:
-    series = pd.to_datetime(series, errors="coerce")
     return pd.to_datetime(series.dt.strftime("%Y-%m-%d %H:00:00"), errors="coerce")
 
 
-def _make_bucket_start(series: pd.Series, bucket: str) -> pd.Series:
-    series = pd.to_datetime(series, errors="coerce")
-
+def _bucket_start_series(series: pd.Series, bucket: str) -> pd.Series:
     if bucket == "hour":
         return _truncate_to_hour(series)
 
     return series.dt.normalize()
 
 
-def _single_bucket_start(ts: pd.Timestamp, bucket: str) -> pd.Timestamp:
-    ts = pd.Timestamp(ts)
+def _bucket_start_single(ts: pd.Timestamp, bucket: str) -> pd.Timestamp:
+    if bucket == "hour":
+        return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day, hour=ts.hour)
+
+    return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
+
+
+def _period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
+    start_bucket = _bucket_start_single(start, bucket)
+    end_bucket = _bucket_start_single(end, bucket)
 
     if bucket == "hour":
-        return pd.Timestamp(
-            year=ts.year,
-            month=ts.month,
-            day=ts.day,
-            hour=ts.hour,
-        )
+        return pd.date_range(start=start_bucket, end=end_bucket, freq="1h")
 
-    return pd.Timestamp(
-        year=ts.year,
-        month=ts.month,
-        day=ts.day,
-    )
+    return pd.date_range(start=start_bucket, end=end_bucket, freq="1D")
 
 
-def _make_period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
-    range_start = _single_bucket_start(start, bucket)
-    range_end = _single_bucket_start(end, bucket)
-
-    if bucket == "hour":
-        return pd.date_range(start=range_start, end=range_end, freq="1h")
-
-    return pd.date_range(start=range_start, end=range_end, freq="1D")
-
-
-def _make_labels(index: pd.DatetimeIndex, bucket: str) -> list[str]:
+def _labels_from_index(index: pd.DatetimeIndex, bucket: str) -> list[str]:
     if bucket == "hour":
         return [ts.strftime("%H:%M") for ts in index]
 
@@ -492,9 +339,9 @@ def _build_aligned_period_series(
     current_end: pd.Timestamp,
     previous_start: pd.Timestamp,
     previous_end: pd.Timestamp,
-    period_mode,
+    period_mode: str,
 ) -> pd.DataFrame:
-    bucket = _chart_bucket_for_mode(period_mode, current_start, current_end)
+    bucket = _chart_bucket_for_mode(period_mode)
 
     current_work = current_df.copy()
     previous_work = previous_df.copy()
@@ -508,17 +355,17 @@ def _build_aligned_period_series(
     current_work["value"] = _get_numeric_value_series(current_work)
     previous_work["value"] = _get_numeric_value_series(previous_work)
 
-    current_work["_bucket_start"] = _make_bucket_start(current_work["_dt"], bucket)
-    previous_work["_bucket_start"] = _make_bucket_start(previous_work["_dt"], bucket)
+    current_work["_bucket_start"] = _bucket_start_series(current_work["_dt"], bucket)
+    previous_work["_bucket_start"] = _bucket_start_series(previous_work["_dt"], bucket)
 
-    current_index = _make_period_index(current_start, current_end, bucket)
-    previous_index = _make_period_index(previous_start, previous_end, bucket)
+    current_index = _period_index(current_start, current_end, bucket)
+    previous_index = _period_index(previous_start, previous_end, bucket)
 
     if len(current_index) == 0:
-        current_index = pd.DatetimeIndex([_single_bucket_start(current_start, bucket)])
+        current_index = pd.DatetimeIndex([_bucket_start_single(current_start, bucket)])
 
     if len(previous_index) == 0:
-        previous_index = pd.DatetimeIndex([_single_bucket_start(previous_start, bucket)])
+        previous_index = pd.DatetimeIndex([_bucket_start_single(previous_start, bucket)])
 
     current_series = (
         current_work.groupby("_bucket_start", dropna=True)["value"]
@@ -544,12 +391,12 @@ def _build_aligned_period_series(
         previous_values.extend([0] * (slot_count - len(previous_values)))
 
     if len(current_index) < slot_count:
-        last = current_index[-1] if len(current_index) > 0 else _single_bucket_start(current_start, bucket)
+        last = current_index[-1] if len(current_index) > 0 else _bucket_start_single(current_start, bucket)
         step = pd.Timedelta(hours=1) if bucket == "hour" else pd.Timedelta(days=1)
         extra = [last + step * (i + 1) for i in range(slot_count - len(current_index))]
         current_index = current_index.append(pd.DatetimeIndex(extra))
 
-    labels = _make_labels(current_index[:slot_count], bucket)
+    labels = _labels_from_index(current_index[:slot_count], bucket)
 
     return pd.DataFrame(
         {
@@ -567,7 +414,7 @@ def _render_sales_comparison_chart(
     current_end: pd.Timestamp,
     previous_start: pd.Timestamp,
     previous_end: pd.Timestamp,
-    period_mode,
+    period_mode: str,
     title: str,
 ) -> None:
     aligned_df = _build_aligned_period_series(
@@ -625,17 +472,8 @@ filters = get_active_filters()
 selected_account_id = filters["accountId"]
 allowed_account_ids = filters["allowedAccountIds"]
 account_filter = None if selected_account_id in (None, "__ALL__") else selected_account_id
-raw_date_range = filters.get("dateRange")
-period_mode = _extract_period_mode(filters, raw_date_range)
-
-current_start, current_end = _resolve_effective_period(raw_date_range, period_mode)
-previous_start, previous_end = (None, None)
-
-effective_current_date_range = (
-    (current_start, current_end)
-    if current_start is not None and current_end is not None
-    else raw_date_range
-)
+date_range = filters["dateRange"]
+period_mode = st.session_state.get("period_mode", "Mês")
 
 st.title("Vendas")
 
@@ -644,19 +482,21 @@ sales_df = load_collection_df(
     account_id=account_filter,
     allowed_account_ids=allowed_account_ids,
     date_field="soldAt",
-    date_range=effective_current_date_range,
+    date_range=date_range,
 )
 
+current_start, current_end = _extract_current_range(date_range)
 previous_sales_df = pd.DataFrame()
+previous_start, previous_end = None, None
 
 if current_start is not None and current_end is not None:
-    previous_start, previous_end = _previous_period(current_start, current_end, period_mode)
+    previous_start, previous_end = _previous_range_for_mode(current_start, current_end, period_mode)
     previous_sales_df = load_collection_df(
         "sales",
         account_id=account_filter,
         allowed_account_ids=allowed_account_ids,
         date_field="soldAt",
-        date_range=(previous_start, previous_end),
+        date_range=_range_dict(previous_start, previous_end),
     )
 
 if not sales_df.empty:
@@ -665,26 +505,26 @@ if not sales_df.empty:
     elif "soldAt" in sales_df.columns:
         sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
-valid_sales_df = (
-    sales_df[sales_df["status"] != "CANCELED"]
-    if not sales_df.empty and "status" in sales_df.columns
-    else sales_df
-)
+if not previous_sales_df.empty:
+    if "soldAtParsed" in previous_sales_df.columns:
+        previous_sales_df = previous_sales_df.sort_values("soldAtParsed", ascending=False, na_position="last")
+    elif "soldAt" in previous_sales_df.columns:
+        previous_sales_df = previous_sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
-canceled_sales_df = (
-    sales_df[sales_df["status"] == "CANCELED"]
-    if not sales_df.empty and "status" in sales_df.columns
-    else pd.DataFrame()
-)
+valid_sales_df = sales_df[
+    sales_df["status"] != "CANCELED"
+] if not sales_df.empty and "status" in sales_df.columns else sales_df
 
-render_kpis(
-    [
-        ("Registos", str(safe_count(sales_df))),
-        ("Vendas válidas", str(safe_count(valid_sales_df))),
-        ("Receita válida", format_currency(safe_sum(valid_sales_df, "value"))),
-        ("Canceladas", str(safe_count(canceled_sales_df))),
-    ]
-)
+canceled_sales_df = sales_df[
+    sales_df["status"] == "CANCELED"
+] if not sales_df.empty and "status" in sales_df.columns else pd.DataFrame()
+
+render_kpis([
+    ("Registos", str(safe_count(sales_df))),
+    ("Vendas válidas", str(safe_count(valid_sales_df))),
+    ("Receita válida", format_currency(safe_sum(valid_sales_df, "value"))),
+    ("Canceladas", str(safe_count(canceled_sales_df))),
+])
 
 left, right = st.columns([1.3, 1])
 
@@ -736,8 +576,7 @@ with right:
 st.subheader("Tabela de vendas")
 
 table_columns = [
-    c
-    for c in [
+    c for c in [
         "saleId",
         "soldAt",
         "articleTitle",
@@ -748,8 +587,7 @@ table_columns = [
         "accountId",
         "buyerUsername",
         "matchedLabelId",
-    ]
-    if c in sales_df.columns
+    ] if c in sales_df.columns
 ]
 
 table_df = sales_df[table_columns].copy()
@@ -891,22 +729,16 @@ else:
             st.info("Sem saleItems para esta venda.")
         else:
             sale_items_visible_cols = [
-                c
-                for c in [
+                c for c in [
                     "articleTitle",
                     "sku",
                     "allocatedValue",
                     "currency",
                     "shippingCode",
                     "buyerUsername",
-                ]
-                if c in sale_items_df.columns
+                ] if c in sale_items_df.columns
             ]
-            render_dataframe(
-                sale_items_df[sale_items_visible_cols]
-                if sale_items_visible_cols
-                else sale_items_df
-            )
+            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
 
         st.markdown("#### Label associada")
         matched_label_id = sale_row.get("matchedLabelId")
