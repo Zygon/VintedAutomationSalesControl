@@ -21,24 +21,38 @@ from services.metrics import format_currency, safe_count, safe_sum, time_series
 
 STATUS_COLORS = {
     "PENDING": "#fff3cd",
+    "AWAITING_PAYMENT": "#fff3cd",
+    "WAITING_PAYMENT": "#fff3cd",
+    "OPEN": "#fff3cd",
+    "REVIEW": "#cfe2ff",
+    "PROCESSING": "#cfe2ff",
     "PAID": "#d1e7dd",
+    "COMPLETED": "#d1e7dd",
     "CANCELED": "#e2e3e5",
     "CANCELLED": "#e2e3e5",
+    "VOID": "#e2e3e5",
     "OVERDUE": "#f8d7da",
     "ERROR": "#dc3545",
     "REJECTED": "#dc3545",
-    "REVIEW": "#cfe2ff",
+    "FAILED": "#dc3545",
 }
 
 STATUS_TEXT_COLORS = {
     "PENDING": "#856404",
+    "AWAITING_PAYMENT": "#856404",
+    "WAITING_PAYMENT": "#856404",
+    "OPEN": "#856404",
+    "REVIEW": "#0c5460",
+    "PROCESSING": "#0c5460",
     "PAID": "#155724",
+    "COMPLETED": "#155724",
     "CANCELED": "#41464b",
     "CANCELLED": "#41464b",
+    "VOID": "#41464b",
     "OVERDUE": "#721c24",
     "ERROR": "#ffffff",
     "REJECTED": "#ffffff",
-    "REVIEW": "#0c5460",
+    "FAILED": "#ffffff",
 }
 
 
@@ -99,11 +113,7 @@ def _render_insert_expense_modal(account_filter, allowed_account_ids):
             received_date = st.date_input("Data de receção", value=datetime.now(timezone.utc).date())
             total_amount = st.number_input("Valor total", min_value=0.0, step=0.01, format="%.2f")
             vat_amount = st.number_input("IVA", min_value=0.0, step=0.01, format="%.2f")
-            status = st.selectbox(
-                "Status",
-                options=["PENDING", "PAID", "REVIEW", "CANCELED", "OVERDUE"],
-                index=0,
-            )
+            status = st.text_input("Status", value="PENDING")
 
         submitted = st.form_submit_button("Guardar despesa", use_container_width=True)
 
@@ -127,7 +137,7 @@ def _render_insert_expense_modal(account_filter, allowed_account_ids):
         "vatAmount": float(vat_amount),
         "currency": (currency or "EUR").strip().upper(),
         "receivedAt": received_at,
-        "status": str(status).strip().upper(),
+        "status": str(status).strip().upper() or None,
         "createdAt": now_iso,
         "updatedAt": now_iso,
     }
@@ -184,76 +194,66 @@ with right:
     render_bar_chart(vat_df, "period", "vatAmount", "IVA por período")
 
 st.subheader("Tabela de despesas")
-visible_cols = [
-    c for c in [
-        "accountId",
-        "invoiceNumber",
-        "billingPeriodRaw",
-        "totalAmount",
-        "vatAmount",
-        "currency",
-        "receivedAt",
-        "status",
-    ] if c in expenses_df.columns
-]
 
-support_cols = [c for c in ["expenseId"] if c in expenses_df.columns]
-table_df = expenses_df[support_cols + visible_cols].copy() if not expenses_df.empty else expenses_df.copy()
-grid_df = _sanitize_for_aggrid(table_df)
+if expenses_df.empty:
+    AgGrid(pd.DataFrame(), height=300, theme="streamlit")
+else:
+    all_cols = list(expenses_df.columns)
+    visible_cols = [c for c in all_cols if c != "expenseId"]
+    table_df = expenses_df[[c for c in all_cols if c in expenses_df.columns]].copy()
+    grid_df = _sanitize_for_aggrid(table_df)
 
-gb = GridOptionsBuilder.from_dataframe(grid_df)
-gb.configure_default_column(resizable=True, sortable=True, filter=True)
+    gb = GridOptionsBuilder.from_dataframe(grid_df)
+    gb.configure_default_column(resizable=True, sortable=True, filter=True)
 
-if "expenseId" in grid_df.columns:
-    gb.configure_column("expenseId", hide=True)
+    if "expenseId" in grid_df.columns:
+        gb.configure_column("expenseId", hide=True)
 
-if "totalAmount" in grid_df.columns:
-    gb.configure_column("totalAmount", type=["numericColumn"])
+    for numeric_col in ["totalAmount", "vatAmount"]:
+        if numeric_col in grid_df.columns:
+            gb.configure_column(numeric_col, type=["numericColumn"])
 
-if "vatAmount" in grid_df.columns:
-    gb.configure_column("vatAmount", type=["numericColumn"])
+    status_colors_js = json.dumps(STATUS_COLORS)
+    status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
 
-status_colors_js = json.dumps(STATUS_COLORS)
-status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
+    row_style_jscode = JsCode(
+        f"""
+        function(params) {{
+            const rawStatus = String((params.data && params.data.status) || '').toUpperCase().trim();
+            const bgColors = {status_colors_js};
+            const textColors = {status_text_colors_js};
 
-row_style_jscode = JsCode(
-    f"""
-    function(params) {{
-        const rawStatus = String((params.data && params.data.status) || '').toUpperCase().trim();
-        const bgColors = {status_colors_js};
-        const textColors = {status_text_colors_js};
-
-        if (bgColors[rawStatus]) {{
-            const style = {{ backgroundColor: bgColors[rawStatus] }};
-            if (textColors[rawStatus]) {{
-                style.color = textColors[rawStatus];
+            if (rawStatus && bgColors[rawStatus]) {{
+                const style = {{ backgroundColor: bgColors[rawStatus] }};
+                if (textColors[rawStatus]) {{
+                    style.color = textColors[rawStatus];
+                }}
+                return style;
             }}
-            return style;
+
+            return {{}};
         }}
+        """
+    )
 
-        return {{}};
-    }}
-    """
-)
+    gb.configure_grid_options(
+        rowHeight=40,
+        animateRows=False,
+        suppressRowClickSelection=True,
+        suppressCellFocus=False,
+        getRowStyle=row_style_jscode,
+    )
 
-gb.configure_grid_options(
-    rowHeight=40,
-    animateRows=False,
-    suppressRowClickSelection=True,
-    suppressCellFocus=False,
-    getRowStyle=row_style_jscode,
-)
+    grid_options = gb.build()
 
-grid_options = gb.build()
-
-AgGrid(
-    grid_df,
-    gridOptions=grid_options,
-    update_mode=GridUpdateMode.NO_UPDATE,
-    allow_unsafe_jscode=True,
-    fit_columns_on_grid_load=False,
-    use_container_width=True,
-    height=550,
-    theme="streamlit",
-    reload_data=False,
-)
+    AgGrid(
+        grid_df[(["expenseId"] if "expenseId" in grid_df.columns else []) + visible_cols],
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.NO_UPDATE,
+        allow_unsafe_jscode=True,
+        fit_columns_on_grid_load=False,
+        use_container_width=True,
+        height=550,
+        theme="streamlit",
+        reload_data=False,
+    )
