@@ -616,9 +616,3 @@ AgGrid(
     reload_data=False,
 )
 
-st.caption(
-    "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | "
-    "amarelo = LABEL_RECEIVED / IN_PRODUCTION / PRINTING / PACKAGING / WAITING_FOR_PICKUP | "
-    "laranja = PRINTED / PRINT_DISPATCHED | azul = SHIPPED | verde = COMPLETED / REVIEW | "
-    "cinzento = CANCELED | vermelho forte = ERROR / PRINT_ERROR"
-)

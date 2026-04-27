@@ -1041,12 +1041,7 @@ with save_col:
         else:
             st.info("Não houve alterações de status para guardar.")
 
-with info_col:
-    st.caption(
-        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT / IN_PRODUCTION | "
-        "amarelo = PRINT_DISPATCHED / PACKAGING / WAITING_FOR_PICKUP | "
-        "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
-    )
+
 
 if detail_sale_id:
     _render_sale_detail_modal(
