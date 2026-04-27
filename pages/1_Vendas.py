@@ -192,16 +192,6 @@ def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
 
 
 def _extract_date_range(date_range):
-    """
-    Tenta suportar vários formatos comuns:
-    - (start, end)
-    - [start, end]
-    - {"start": ..., "end": ...}
-    - {"from": ..., "to": ...}
-    - {"date_from": ..., "date_to": ...}
-    - {"startDate": ..., "endDate": ...}
-    """
-
     if date_range is None:
         return None, None
 
@@ -279,20 +269,73 @@ def _infer_bucket_config(start: pd.Timestamp, end: pd.Timestamp):
 
     if total_seconds <= 36 * 3600:
         return {
-            "freq": "H",
+            "bucket": "hour",
             "label_format": "%H:%M",
         }
 
     if total_seconds <= 62 * 24 * 3600:
         return {
-            "freq": "D",
+            "bucket": "day",
             "label_format": "%d/%m",
         }
 
     return {
-        "freq": "W-MON",
+        "bucket": "week",
         "label_format": "%d/%m",
     }
+
+
+def _week_start(series: pd.Series) -> pd.Series:
+    series = pd.to_datetime(series, errors="coerce")
+    return (series.dt.normalize() - pd.to_timedelta(series.dt.weekday, unit="D"))
+
+
+def _make_bucket_start(series: pd.Series, bucket: str) -> pd.Series:
+    series = pd.to_datetime(series, errors="coerce")
+
+    if bucket == "hour":
+        return series.dt.floor("H")
+
+    if bucket == "day":
+        return series.dt.normalize()
+
+    if bucket == "week":
+        return _week_start(series)
+
+    return series.dt.normalize()
+
+
+def _make_period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
+    if bucket == "hour":
+        range_start = start.floor("H")
+        range_end = end.floor("H")
+        return pd.date_range(start=range_start, end=range_end, freq="H")
+
+    if bucket == "day":
+        range_start = start.normalize()
+        range_end = end.normalize()
+        return pd.date_range(start=range_start, end=range_end, freq="D")
+
+    if bucket == "week":
+        range_start = _week_start(pd.Series([start])).iloc[0]
+        range_end = _week_start(pd.Series([end])).iloc[0]
+        return pd.date_range(start=range_start, end=range_end, freq="7D")
+
+    range_start = start.normalize()
+    range_end = end.normalize()
+    return pd.date_range(start=range_start, end=range_end, freq="D")
+
+
+def _make_labels(index: pd.DatetimeIndex, bucket: str, label_format: str) -> list[str]:
+    labels = []
+
+    for ts in index:
+        if bucket == "week":
+            labels.append(f"Semana {ts.strftime(label_format)}")
+        else:
+            labels.append(ts.strftime(label_format))
+
+    return labels
 
 
 def _build_aligned_period_series(
@@ -304,7 +347,8 @@ def _build_aligned_period_series(
     previous_end: pd.Timestamp,
 ) -> pd.DataFrame:
     config = _infer_bucket_config(current_start, current_end)
-    freq = config["freq"]
+    bucket = config["bucket"]
+    label_format = config["label_format"]
 
     current_work = current_df.copy()
     previous_work = previous_df.copy()
@@ -315,64 +359,66 @@ def _build_aligned_period_series(
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["value"] = pd.to_numeric(
-        current_work.get("value", 0), errors="coerce"
-    ).fillna(0)
+    current_work["value"] = pd.to_numeric(current_work.get("value", 0), errors="coerce").fillna(0)
+    previous_work["value"] = pd.to_numeric(previous_work.get("value", 0), errors="coerce").fillna(0)
 
-    previous_work["value"] = pd.to_numeric(
-        previous_work.get("value", 0), errors="coerce"
-    ).fillna(0)
-
-    current_index = pd.date_range(
-        start=current_start.floor(freq),
-        end=current_end.floor(freq),
-        freq=freq,
-    )
-    previous_index = pd.date_range(
-        start=previous_start.floor(freq),
-        end=previous_end.floor(freq),
-        freq=freq,
-    )
+    current_index = _make_period_index(current_start, current_end, bucket)
+    previous_index = _make_period_index(previous_start, previous_end, bucket)
 
     if len(current_index) == 0:
-        current_index = pd.DatetimeIndex([current_start.floor(freq)])
+        current_index = pd.DatetimeIndex([_make_bucket_start(pd.Series([current_start]), bucket).iloc[0]])
 
     if len(previous_index) == 0:
-        previous_index = pd.DatetimeIndex([previous_start.floor(freq)])
+        previous_index = pd.DatetimeIndex([_make_bucket_start(pd.Series([previous_start]), bucket).iloc[0]])
+
+    current_work["_bucket_start"] = _make_bucket_start(current_work["_dt"], bucket)
+    previous_work["_bucket_start"] = _make_bucket_start(previous_work["_dt"], bucket)
 
     current_series = (
-        current_work.set_index("_dt")
-        .sort_index()["value"]
-        .resample(freq)
+        current_work.groupby("_bucket_start", dropna=True)["value"]
         .sum()
         .reindex(current_index, fill_value=0)
     )
 
     previous_series = (
-        previous_work.set_index("_dt")
-        .sort_index()["value"]
-        .resample(freq)
+        previous_work.groupby("_bucket_start", dropna=True)["value"]
         .sum()
         .reindex(previous_index, fill_value=0)
     )
 
-    slot_count = min(len(current_series), len(previous_series))
-    current_series = current_series.iloc[:slot_count]
-    previous_series = previous_series.iloc[:slot_count]
-    current_index = current_index[:slot_count]
+    slot_count = max(len(current_series), len(previous_series))
 
-    labels = []
-    for ts in current_index:
-        if freq == "W-MON":
-            labels.append(f"Semana {ts.strftime('%d/%m')}")
+    current_values = list(current_series.values)
+    previous_values = list(previous_series.values)
+
+    if len(current_values) < slot_count:
+        current_values.extend([0] * (slot_count - len(current_values)))
+
+    if len(previous_values) < slot_count:
+        previous_values.extend([0] * (slot_count - len(previous_values)))
+
+    if len(current_index) < slot_count:
+        last = current_index[-1] if len(current_index) > 0 else _make_bucket_start(pd.Series([current_start]), bucket).iloc[0]
+        extra = []
+        if bucket == "hour":
+            step = pd.Timedelta(hours=1)
+        elif bucket == "day":
+            step = pd.Timedelta(days=1)
         else:
-            labels.append(ts.strftime(config["label_format"]))
+            step = pd.Timedelta(days=7)
+
+        for i in range(slot_count - len(current_index)):
+            extra.append(last + step * (i + 1))
+
+        current_index = current_index.append(pd.DatetimeIndex(extra))
+
+    labels = _make_labels(current_index[:slot_count], bucket, label_format)
 
     return pd.DataFrame(
         {
             "label": labels,
-            "current_value": current_series.values,
-            "previous_value": previous_series.values,
+            "current_value": current_values[:slot_count],
+            "previous_value": previous_values[:slot_count],
         }
     )
 
