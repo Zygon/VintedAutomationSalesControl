@@ -3,7 +3,7 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
-from urllib.parse import urlencode
+import time
 
 import pandas as pd
 import plotly.express as px
@@ -86,8 +86,10 @@ WEEKDAY_LABELS_PT = {
 }
 
 DETAIL_COLUMN_ID = "__view_detail__"
+DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
 DETAIL_ICON = "👁"
-DETAIL_QUERY_PARAM = "sale_detail"
+DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
+DETAIL_MODAL_TOKEN_KEY = "sales_detail_modal_token"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -604,23 +606,6 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _get_query_params() -> dict:
-    try:
-        return dict(st.query_params)
-    except Exception:
-        return st.experimental_get_query_params()
-
-
-def _set_query_params(params: dict) -> None:
-    clean_params = {k: v for k, v in params.items() if v not in (None, "", [], ())}
-    try:
-        st.query_params.clear()
-        for key, value in clean_params.items():
-            st.query_params[key] = value
-    except Exception:
-        st.experimental_set_query_params(**clean_params)
-
-
 @st.dialog("Detalhe da venda", width="large")
 def _render_sale_detail_modal(
     sale_id: str,
@@ -687,9 +672,8 @@ def _render_sale_detail_modal(
 
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
-        params = _get_query_params()
-        params.pop(DETAIL_QUERY_PARAM, None)
-        _set_query_params(params)
+        st.session_state[DETAIL_MODAL_STATE_KEY] = None
+        st.session_state[DETAIL_MODAL_TOKEN_KEY] = None
         st.rerun()
 
 
@@ -823,16 +807,8 @@ support_columns = [
 
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
-
-query_params = _get_query_params()
-base_params = {k: v for k, v in query_params.items() if k != DETAIL_QUERY_PARAM}
-
-def _build_detail_href(sale_id: str) -> str:
-    params = dict(base_params)
-    params[DETAIL_QUERY_PARAM] = str(sale_id)
-    return f"?{urlencode(params, doseq=True)}"
-
-grid_df.insert(0, DETAIL_COLUMN_ID, grid_df["saleId"].astype(str).map(_build_detail_href))
+grid_df.insert(0, DETAIL_COLUMN_ID, DETAIL_ICON)
+grid_df[DETAIL_TRIGGER_COLUMN_ID] = ""
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -842,28 +818,44 @@ gb.configure_default_column(
     filter=True,
 )
 
-link_renderer = JsCode(
+detail_button_renderer = JsCode(
     f"""
-    class DetailLinkRenderer {{
+    class DetailButtonRenderer {{
         init(params) {{
-            this.eGui = document.createElement('a');
-            this.eGui.setAttribute('href', params.value || '#');
+            this.params = params;
+            this.eGui = document.createElement('button');
+            this.eGui.innerText = '{DETAIL_ICON}';
             this.eGui.setAttribute('title', 'Ver detalhe');
-            this.eGui.style.display = 'inline-flex';
-            this.eGui.style.alignItems = 'center';
-            this.eGui.style.justifyContent = 'center';
             this.eGui.style.width = '100%';
             this.eGui.style.height = '100%';
-            this.eGui.style.textDecoration = 'none';
-            this.eGui.style.fontSize = '18px';
+            this.eGui.style.border = 'none';
+            this.eGui.style.background = 'transparent';
             this.eGui.style.cursor = 'pointer';
-            this.eGui.innerText = '{DETAIL_ICON}';
-            this.eGui.addEventListener('click', function(event) {{
-                event.stopPropagation();
-            }});
+            this.eGui.style.fontSize = '18px';
+            this.eGui.style.padding = '0';
+            this.eGui.style.margin = '0';
+
+            this.clickHandler = () => {{
+                const saleId = String((params.data && params.data.saleId) || '');
+                if (!saleId) {{
+                    return;
+                }}
+
+                const token = saleId + '__' + Date.now().toString();
+                params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', token);
+            }};
+
+            this.eGui.addEventListener('click', this.clickHandler);
         }}
+
         getGui() {{
             return this.eGui;
+        }}
+
+        destroy() {{
+            if (this.eGui && this.clickHandler) {{
+                this.eGui.removeEventListener('click', this.clickHandler);
+            }}
         }}
     }}
     """
@@ -879,7 +871,7 @@ gb.configure_column(
     pinned="left",
     lockPosition=True,
     suppressMenu=True,
-    cellRenderer=link_renderer,
+    cellRenderer=detail_button_renderer,
     cellStyle={
         "textAlign": "center",
         "paddingLeft": "0px",
@@ -887,6 +879,7 @@ gb.configure_column(
     },
 )
 
+gb.configure_column(DETAIL_TRIGGER_COLUMN_ID, hide=True)
 gb.configure_column("saleId", hide=True)
 gb.configure_column("matchedLabelId", hide=True)
 
@@ -942,6 +935,7 @@ grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
     update_mode=GridUpdateMode.VALUE_CHANGED,
+    data_return_mode="AS_INPUT",
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -951,8 +945,21 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
-if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
-    edited_df = edited_df.drop(columns=[DETAIL_COLUMN_ID])
+
+if not edited_df.empty and DETAIL_TRIGGER_COLUMN_ID in edited_df.columns:
+    trigger_series = edited_df[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str).str.strip()
+    triggered_rows = edited_df.loc[trigger_series != ""]
+
+    if not triggered_rows.empty:
+        last_trigger = str(triggered_rows.iloc[-1][DETAIL_TRIGGER_COLUMN_ID])
+        last_sale_id = str(triggered_rows.iloc[-1].get("saleId") or "").strip()
+
+        if last_sale_id and last_trigger != str(st.session_state.get(DETAIL_MODAL_TOKEN_KEY) or ""):
+            st.session_state[DETAIL_MODAL_STATE_KEY] = last_sale_id
+            st.session_state[DETAIL_MODAL_TOKEN_KEY] = last_trigger
+
+if not edited_df.empty:
+    edited_df = edited_df.drop(columns=[c for c in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns])
 
 save_col, info_col = st.columns([1, 3])
 
@@ -973,7 +980,7 @@ with info_col:
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-modal_sale_id = str(query_params.get(DETAIL_QUERY_PARAM, "") or "").strip()
+modal_sale_id = str(st.session_state.get(DETAIL_MODAL_STATE_KEY) or "").strip()
 if modal_sale_id:
     _render_sale_detail_modal(
         sale_id=modal_sale_id,
