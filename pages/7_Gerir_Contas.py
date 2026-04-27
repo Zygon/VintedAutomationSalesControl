@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from components.layout import apply_page_layout
+
+apply_page_layout()
+
+
 import pandas as pd
 import streamlit as st
 

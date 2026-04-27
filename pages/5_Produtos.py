@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from components.layout import apply_page_layout
+
+apply_page_layout()
+
+
 import streamlit as st
 
 from components.auth_guard import render_user_box, require_login
