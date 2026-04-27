@@ -555,6 +555,50 @@ def _render_create_expense_modal(selected_account_id: str, allowed_account_ids: 
             st.error(f"Falha ao inserir despesa: {result}")
 
 
+def _filter_df_by_date_range(df: pd.DataFrame, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.DataFrame:
+    if df.empty or start is None or end is None:
+        return df
+
+    series = _get_datetime_series(df)
+    if series.empty:
+        return df
+
+    work = df.copy()
+    work["__filter_dt__"] = series
+    work = work[work["__filter_dt__"].notna()]
+    work = work[(work["__filter_dt__"] >= start) & (work["__filter_dt__"] <= end)]
+    return work.drop(columns=["__filter_dt__"], errors="ignore")
+
+
+def _load_expenses_with_best_date_field(account_filter, allowed_account_ids, date_range: dict | None) -> tuple[pd.DataFrame, str | None]:
+    candidate_date_fields = ["expenseDate", "incurredAt", "createdAt", "updatedAt"]
+
+    for field in candidate_date_fields:
+        try:
+            df = load_collection_df(
+                "expenses",
+                account_id=account_filter,
+                allowed_account_ids=allowed_account_ids,
+                date_field=field,
+                date_range=date_range,
+            )
+            if not df.empty:
+                return df, field
+        except Exception:
+            continue
+
+    try:
+        df = load_collection_df(
+            "expenses",
+            account_id=account_filter,
+            allowed_account_ids=allowed_account_ids,
+        )
+    except Exception:
+        return pd.DataFrame(), None
+
+    return df, None
+
+
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -568,28 +612,40 @@ period_mode = st.session_state.get("period_mode", "Mês")
 
 st.title("Despesas")
 
-date_field = "expenseDate"
-expenses_df = load_collection_df(
-    "expenses",
-    account_id=account_filter,
+current_start, current_end = _extract_current_range(date_range)
+
+expenses_df, detected_date_field = _load_expenses_with_best_date_field(
+    account_filter=account_filter,
     allowed_account_ids=allowed_account_ids,
-    date_field=date_field,
     date_range=date_range,
 )
 
-current_start, current_end = _extract_current_range(date_range)
+if detected_date_field is None:
+    expenses_df = _filter_df_by_date_range(expenses_df, current_start, current_end)
+
 previous_expenses_df = pd.DataFrame()
 previous_start, previous_end = None, None
 
 if current_start is not None and current_end is not None:
     previous_start, previous_end = _previous_range_for_mode(current_start, current_end, period_mode)
-    previous_expenses_df = load_collection_df(
-        "expenses",
-        account_id=account_filter,
-        allowed_account_ids=allowed_account_ids,
-        date_field=date_field,
-        date_range=_range_dict(previous_start, previous_end),
-    )
+    if detected_date_field is not None:
+        previous_expenses_df = load_collection_df(
+            "expenses",
+            account_id=account_filter,
+            allowed_account_ids=allowed_account_ids,
+            date_field=detected_date_field,
+            date_range=_range_dict(previous_start, previous_end),
+        )
+    else:
+        try:
+            previous_expenses_df = load_collection_df(
+                "expenses",
+                account_id=account_filter,
+                allowed_account_ids=allowed_account_ids,
+            )
+        except Exception:
+            previous_expenses_df = pd.DataFrame()
+        previous_expenses_df = _filter_df_by_date_range(previous_expenses_df, previous_start, previous_end)
 
 sort_col = _pick_first_existing_column(
     expenses_df,
