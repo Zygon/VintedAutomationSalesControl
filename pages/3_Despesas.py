@@ -251,10 +251,14 @@ expenses_df = load_collection_df(
     date_range=date_range,
 )
 
+total_expenses = safe_sum(expenses_df, "totalAmount")
+expense_count = safe_count(expenses_df)
+average_expense = (total_expenses / expense_count) if expense_count > 0 else 0
+
 render_kpis([
-    ("Total despesas", format_currency(safe_sum(expenses_df, "totalAmount"))),
-    ("IVA", format_currency(safe_sum(expenses_df, "vatAmount"))),
-    ("Registos", str(safe_count(expenses_df))),
+    ("Total despesas", format_currency(total_expenses)),
+    ("Despesa média", format_currency(average_expense)),
+    ("Registos", str(expense_count)),
 ])
 
 left, right = st.columns([1.2, 1])
