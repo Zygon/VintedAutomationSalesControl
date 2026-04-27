@@ -1,10 +1,10 @@
-from components.constants import STATUS_COLORS
 from components.layout import apply_page_layout
 
 apply_page_layout()
 
-import pandas as pd
 import json
+
+import pandas as pd
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
@@ -20,7 +20,6 @@ from services.firestore_queries import (
 )
 from services.metrics import (
     format_currency,
-    safe_avg,
     safe_count,
     safe_sum,
     status_breakdown,
@@ -43,6 +42,24 @@ STATUS_OPTIONS = [
     "IN_PRODUCTION",
     "PACKAGING",
 ]
+
+STATUS_COLORS = {
+    "WAITING_LABEL": "#f8d7da",
+    "READY_TO_PRINT": "#f8d7da",
+    "IN_PRODUCTION": "#f8d7da",
+    "PRINT_DISPATCHED": "#fff3cd",
+    "PACKAGING": "#fff3cd",
+    "SHIPPED": "#cfe2ff",
+    "COMPLETED": "#d1e7dd",
+    "CANCELED": "#e2e3e5",
+}
+
+STATUS_TEXT_COLORS = {
+    "PRINT_DISPATCHED": "#856404",
+    "PACKAGING": "#856404",
+    "IN_PRODUCTION": "#856404",
+    "CANCELED": "#41464b",
+}
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -136,6 +153,18 @@ def _build_label_table(label: dict) -> pd.DataFrame:
     return pd.DataFrame([row])
 
 
+def _build_status_chart_df(sales_df: pd.DataFrame) -> pd.DataFrame:
+    df = status_breakdown(sales_df)
+
+    if df.empty:
+        return df
+
+    work = df.copy()
+    work["status"] = work["status"].astype(str).str.upper()
+    work["color"] = work["status"].map(STATUS_COLORS).fillna("#adb5bd")
+    return work
+
+
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -162,17 +191,25 @@ if not sales_df.empty:
     elif "soldAt" in sales_df.columns:
         sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
-valid_sales_df = sales_df[
-    sales_df["status"] != "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else sales_df
-canceled_sales_df = sales_df[
-    sales_df["status"] == "CANCELED"] if not sales_df.empty and "status" in sales_df.columns else pd.DataFrame()
+valid_sales_df = (
+    sales_df[sales_df["status"] != "CANCELED"]
+    if not sales_df.empty and "status" in sales_df.columns
+    else sales_df
+)
+canceled_sales_df = (
+    sales_df[sales_df["status"] == "CANCELED"]
+    if not sales_df.empty and "status" in sales_df.columns
+    else pd.DataFrame()
+)
 
-render_kpis([
-    ("Registos", str(safe_count(sales_df))),
-    ("Vendas válidas", str(safe_count(valid_sales_df))),
-    ("Receita válida", format_currency(safe_sum(valid_sales_df, "value"))),
-    ("Canceladas", str(safe_count(canceled_sales_df))),
-])
+render_kpis(
+    [
+        ("Registos", str(safe_count(sales_df))),
+        ("Vendas válidas", str(safe_count(valid_sales_df))),
+        ("Receita válida", format_currency(safe_sum(valid_sales_df, "value"))),
+        ("Canceladas", str(safe_count(canceled_sales_df))),
+    ]
+)
 
 left, right = st.columns([1.3, 1])
 
@@ -185,12 +222,20 @@ with left:
     render_line_chart(series_df, "period", "value", "Valor de vendas por período")
 
 with right:
-    render_bar_chart(status_breakdown(sales_df), "status", "count", "Estados das vendas")
+    status_chart_df = _build_status_chart_df(sales_df)
+    render_bar_chart(
+        status_chart_df,
+        "status",
+        "count",
+        "Estados das vendas",
+        color_column="color",
+    )
 
 st.subheader("Tabela de vendas")
 
 table_columns = [
-    c for c in [
+    c
+    for c in [
         "saleId",
         "soldAt",
         "articleTitle",
@@ -201,7 +246,8 @@ table_columns = [
         "accountId",
         "buyerUsername",
         "matchedLabelId",
-    ] if c in sales_df.columns
+    ]
+    if c in sales_df.columns
 ]
 
 table_df = sales_df[table_columns].copy()
@@ -239,22 +285,30 @@ gb.configure_grid_options(
     animateRows=False,
 )
 
-
-
 status_colors_js = json.dumps(STATUS_COLORS)
+status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
 
-row_style_jscode = JsCode(f"""
-function(params) {{
-    const status = (params.data.status || "").toUpperCase();
-    const colors = {status_colors_js};
+row_style_jscode = JsCode(
+    f"""
+    function(params) {{
+        const status = String((params.data && params.data.status) || "").toUpperCase();
+        const bgColors = {status_colors_js};
+        const textColors = {status_text_colors_js};
 
-    if (colors[status]) {{
-        return {{ backgroundColor: colors[status] }};
+        if (bgColors[status]) {{
+            const style = {{ backgroundColor: bgColors[status] }};
+
+            if (textColors[status]) {{
+                style.color = textColors[status];
+            }}
+
+            return style;
+        }}
+
+        return {{}};
     }}
-
-    return {{}};
-}}
-""")
+    """
+)
 
 gb.configure_grid_options(getRowStyle=row_style_jscode)
 
@@ -288,7 +342,9 @@ with save_col:
 
 with info_col:
     st.caption(
-        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT | amarelo = PRINT_DISPATCHED | azul = SHIPPED | verde = COMPLETED"
+        "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT / IN_PRODUCTION | "
+        "amarelo = PRINT_DISPATCHED / PACKAGING | "
+        "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
 selected_rows = grid_response.get("selected_rows", [])
@@ -333,16 +389,22 @@ else:
             st.info("Sem saleItems para esta venda.")
         else:
             sale_items_visible_cols = [
-                c for c in [
+                c
+                for c in [
                     "articleTitle",
                     "sku",
                     "allocatedValue",
                     "currency",
                     "shippingCode",
                     "buyerUsername",
-                ] if c in sale_items_df.columns
+                ]
+                if c in sale_items_df.columns
             ]
-            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
+            render_dataframe(
+                sale_items_df[sale_items_visible_cols]
+                if sale_items_visible_cols
+                else sale_items_df
+            )
 
         st.markdown("#### Label associada")
         matched_label_id = sale_row.get("matchedLabelId")
