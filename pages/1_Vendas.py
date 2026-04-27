@@ -889,7 +889,7 @@ grid_options = gb.build()
 grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
-    update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,
+    update_mode=GridUpdateMode.VALUE_CHANGED | GridUpdateMode.CELL_CLICKED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -897,6 +897,18 @@ grid_response = AgGrid(
     theme="streamlit",
     reload_data=False,
 )
+
+clicked_cell = grid_response.get("selected_cells")
+
+if clicked_cell:
+    cell = clicked_cell[0]
+    col_id = cell.get("colId")
+    row_index = cell.get("rowIndex")
+
+    if col_id == DETAIL_COLUMN_ID:
+        sale_id = grid_df.iloc[row_index]["saleId"]
+
+        st.session_state[DETAIL_MODAL_STATE_KEY] = str(sale_id)
 
 edited_df = pd.DataFrame(grid_response["data"])
 if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
@@ -929,9 +941,6 @@ if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
 elif isinstance(selected_rows, list) and len(selected_rows) > 0:
     selected_sale_id = str(selected_rows[0].get("saleId"))
 
-if selected_sale_id and selected_sale_id != st.session_state.get(DETAIL_LAST_OPENED_KEY):
-    st.session_state[DETAIL_MODAL_STATE_KEY] = selected_sale_id
-    st.session_state[DETAIL_LAST_OPENED_KEY] = selected_sale_id
 
 modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
 if modal_sale_id:
