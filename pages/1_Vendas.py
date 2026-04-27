@@ -52,7 +52,7 @@ STATUS_COLORS = {
     "PACKAGING": "#fff3cd",
     "SHIPPED": "#cfe2ff",
     "COMPLETED": "#d1e7dd",
-    "CANCELED": "#e2e3e5",
+    "CANCELED": "#e2e5e5",
 }
 
 STATUS_TEXT_COLORS = {
@@ -287,14 +287,19 @@ def _infer_bucket_config(start: pd.Timestamp, end: pd.Timestamp):
 
 def _week_start(series: pd.Series) -> pd.Series:
     series = pd.to_datetime(series, errors="coerce")
-    return (series.dt.normalize() - pd.to_timedelta(series.dt.weekday, unit="D"))
+    return series.dt.normalize() - pd.to_timedelta(series.dt.weekday, unit="D")
+
+
+def _truncate_to_hour(series: pd.Series) -> pd.Series:
+    series = pd.to_datetime(series, errors="coerce")
+    return series.dt.strftime("%Y-%m-%d %H:00:00").pipe(pd.to_datetime, errors="coerce")
 
 
 def _make_bucket_start(series: pd.Series, bucket: str) -> pd.Series:
     series = pd.to_datetime(series, errors="coerce")
 
     if bucket == "hour":
-        return series.dt.floor("H")
+        return _truncate_to_hour(series)
 
     if bucket == "day":
         return series.dt.normalize()
@@ -305,25 +310,45 @@ def _make_bucket_start(series: pd.Series, bucket: str) -> pd.Series:
     return series.dt.normalize()
 
 
-def _make_period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
+def _single_bucket_start(ts: pd.Timestamp, bucket: str) -> pd.Timestamp:
+    ts = pd.Timestamp(ts)
+
     if bucket == "hour":
-        range_start = start.floor("H")
-        range_end = end.floor("H")
-        return pd.date_range(start=range_start, end=range_end, freq="H")
+        return pd.Timestamp(
+            year=ts.year,
+            month=ts.month,
+            day=ts.day,
+            hour=ts.hour,
+        )
 
     if bucket == "day":
-        range_start = start.normalize()
-        range_end = end.normalize()
-        return pd.date_range(start=range_start, end=range_end, freq="D")
+        return pd.Timestamp(
+            year=ts.year,
+            month=ts.month,
+            day=ts.day,
+        )
 
     if bucket == "week":
-        range_start = _week_start(pd.Series([start])).iloc[0]
-        range_end = _week_start(pd.Series([end])).iloc[0]
-        return pd.date_range(start=range_start, end=range_end, freq="7D")
+        normalized = pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
+        return normalized - pd.Timedelta(days=normalized.weekday())
 
-    range_start = start.normalize()
-    range_end = end.normalize()
-    return pd.date_range(start=range_start, end=range_end, freq="D")
+    return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
+
+
+def _make_period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
+    range_start = _single_bucket_start(start, bucket)
+    range_end = _single_bucket_start(end, bucket)
+
+    if bucket == "hour":
+        step = "1h"
+    elif bucket == "day":
+        step = "1D"
+    elif bucket == "week":
+        step = "7D"
+    else:
+        step = "1D"
+
+    return pd.date_range(start=range_start, end=range_end, freq=step)
 
 
 def _make_labels(index: pd.DatetimeIndex, bucket: str, label_format: str) -> list[str]:
@@ -366,10 +391,10 @@ def _build_aligned_period_series(
     previous_index = _make_period_index(previous_start, previous_end, bucket)
 
     if len(current_index) == 0:
-        current_index = pd.DatetimeIndex([_make_bucket_start(pd.Series([current_start]), bucket).iloc[0]])
+        current_index = pd.DatetimeIndex([_single_bucket_start(current_start, bucket)])
 
     if len(previous_index) == 0:
-        previous_index = pd.DatetimeIndex([_make_bucket_start(pd.Series([previous_start]), bucket).iloc[0]])
+        previous_index = pd.DatetimeIndex([_single_bucket_start(previous_start, bucket)])
 
     current_work["_bucket_start"] = _make_bucket_start(current_work["_dt"], bucket)
     previous_work["_bucket_start"] = _make_bucket_start(previous_work["_dt"], bucket)
@@ -398,8 +423,8 @@ def _build_aligned_period_series(
         previous_values.extend([0] * (slot_count - len(previous_values)))
 
     if len(current_index) < slot_count:
-        last = current_index[-1] if len(current_index) > 0 else _make_bucket_start(pd.Series([current_start]), bucket).iloc[0]
-        extra = []
+        last = current_index[-1] if len(current_index) > 0 else _single_bucket_start(current_start, bucket)
+
         if bucket == "hour":
             step = pd.Timedelta(hours=1)
         elif bucket == "day":
@@ -407,9 +432,7 @@ def _build_aligned_period_series(
         else:
             step = pd.Timedelta(days=7)
 
-        for i in range(slot_count - len(current_index)):
-            extra.append(last + step * (i + 1))
-
+        extra = [last + step * (i + 1) for i in range(slot_count - len(current_index))]
         current_index = current_index.append(pd.DatetimeIndex(extra))
 
     labels = _make_labels(current_index[:slot_count], bucket, label_format)
