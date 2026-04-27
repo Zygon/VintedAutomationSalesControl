@@ -42,6 +42,16 @@ STATUS_OPTIONS = [
     "PRINT_ERROR",
     "IN_PRODUCTION",
     "PACKAGING",
+    "WAITING_FOR_PICKUP",
+]
+
+EDITABLE_STATUS_OPTIONS = [
+    "WAITING_FOR_PICKUP",
+    "IN_PRODUCTION",
+    "PACKAGING",
+    "SHIPPED",
+    "CANCELED",
+    "COMPLETED",
 ]
 
 STATUS_COLORS = {
@@ -53,6 +63,7 @@ STATUS_COLORS = {
     "SHIPPED": "#cfe2ff",
     "COMPLETED": "#d1e7dd",
     "CANCELED": "#e2e3e5",
+    "WAITING_FOR_PICKUP": "ffe5b4"
 }
 
 STATUS_TEXT_COLORS = {
@@ -60,6 +71,7 @@ STATUS_TEXT_COLORS = {
     "PACKAGING": "#856404",
     "IN_PRODUCTION": "#856404",
     "CANCELED": "#41464b",
+    "WAITING_FOR_PICKUP": "8a5a00"
 }
 
 WEEKDAY_LABELS_PT = {
@@ -828,7 +840,7 @@ if "status" in grid_df.columns:
         "status",
         editable=True,
         cellEditor="agSelectCellEditor",
-        cellEditorParams={"values": STATUS_OPTIONS},
+        cellEditorParams={"values": EDITABLE_STATUS_OPTIONS},
     )
 
 if "value" in grid_df.columns:
