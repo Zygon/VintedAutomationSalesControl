@@ -557,14 +557,9 @@ visible_cols = [
     c for c in [
         "updatedAt",
         "accountId",
-        "saleId",
         "articleTitle",
         "shippingCode",
         "status",
-        "orderId",
-        "shippedAt",
-        "estimatedDeliveryStartRaw",
-        "estimatedDeliveryEndRaw",
         "completedAt",
     ] if c in shipment_df.columns
 ]
