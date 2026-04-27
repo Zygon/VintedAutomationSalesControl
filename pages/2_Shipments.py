@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import json
 
+from components.layout import apply_page_layout
+
+apply_page_layout()
+
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
