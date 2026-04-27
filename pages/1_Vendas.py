@@ -56,23 +56,65 @@ EDITABLE_STATUS_OPTIONS = [
 ]
 
 STATUS_COLORS = {
+    # BLOQUEADO / INICIAL
     "WAITING_LABEL": "#f8d7da",
     "READY_TO_PRINT": "#f8d7da",
-    "IN_PRODUCTION": "#f8d7da",
-    "PRINT_DISPATCHED": "#fff3cd",
+
+    # EM PROGRESSO
+    "LABEL_RECEIVED": "#fff3cd",
+    "IN_PRODUCTION": "#fff3cd",
+    "PRINTING": "#fff3cd",
     "PACKAGING": "#fff3cd",
-    "WAITING_FOR_PICKUP": "#ffe5b4",
+    "WAITING_FOR_PICKUP": "#fff3cd",
+
+    # QUASE PRONTO
+    "PRINTED": "#ffe5b4",
+    "PRINT_DISPATCHED": "#ffe5b4",
+
+    # ENVIADO
     "SHIPPED": "#cfe2ff",
+
+    # CONCLUÍDO
     "COMPLETED": "#d1e7dd",
+    "REVIEW": "#d1e7dd",
+
+    # CANCELADO
     "CANCELED": "#e2e3e5",
+
+    # ERRO
+    "ERROR": "#dc3545",
+    "PRINT_ERROR": "#dc3545",
 }
 
 STATUS_TEXT_COLORS = {
-    "PRINT_DISPATCHED": "#856404",
-    "PACKAGING": "#856404",
+    # BLOQUEADO / INICIAL
+    "WAITING_LABEL": "#721c24",
+    "READY_TO_PRINT": "#721c24",
+
+    # EM PROGRESSO
+    "LABEL_RECEIVED": "#856404",
     "IN_PRODUCTION": "#856404",
-    "WAITING_FOR_PICKUP": "#8a5a00",
+    "PRINTING": "#856404",
+    "PACKAGING": "#856404",
+    "WAITING_FOR_PICKUP": "#856404",
+
+    # QUASE PRONTO
+    "PRINTED": "#8a5a00",
+    "PRINT_DISPATCHED": "#8a5a00",
+
+    # ENVIADO
+    "SHIPPED": "#0c5460",
+
+    # CONCLUÍDO
+    "COMPLETED": "#155724",
+    "REVIEW": "#155724",
+
+    # CANCELADO
     "CANCELED": "#41464b",
+
+    # ERRO
+    "ERROR": "#ffffff",
+    "PRINT_ERROR": "#ffffff",
 }
 
 WEEKDAY_LABELS_PT = {
