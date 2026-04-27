@@ -63,7 +63,7 @@ STATUS_COLORS = {
     "SHIPPED": "#cfe2ff",
     "COMPLETED": "#d1e7dd",
     "CANCELED": "#e2e3e5",
-    "WAITING_FOR_PICKUP": "ffe5b4"
+    "WAITING_FOR_PICKUP": "#ffe5b4"
 }
 
 STATUS_TEXT_COLORS = {
@@ -71,7 +71,7 @@ STATUS_TEXT_COLORS = {
     "PACKAGING": "#856404",
     "IN_PRODUCTION": "#856404",
     "CANCELED": "#41464b",
-    "WAITING_FOR_PICKUP": "8a5a00"
+    "WAITING_FOR_PICKUP": "#8a5a00"
 }
 
 WEEKDAY_LABELS_PT = {
@@ -88,6 +88,30 @@ DETAIL_COLUMN_ID = "__view_detail__"
 DETAIL_ICON = "👁"
 DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
 DETAIL_LAST_OPENED_KEY = "sales_detail_last_opened_sale_id"
+DETAIL_QUERY_PARAM_KEY = "sale_detail"
+
+
+def _open_sale_detail_via_query_params() -> str | None:
+    sale_id = st.query_params.get(DETAIL_QUERY_PARAM_KEY)
+    if sale_id is None:
+        return None
+
+    if isinstance(sale_id, list):
+        sale_id = sale_id[0] if sale_id else None
+
+    sale_id = str(sale_id).strip() if sale_id is not None else None
+    return sale_id or None
+
+
+def _clear_sale_detail_query_param() -> None:
+    try:
+        del st.query_params[DETAIL_QUERY_PARAM_KEY]
+    except Exception:
+        params = dict(st.query_params)
+        params.pop(DETAIL_QUERY_PARAM_KEY, None)
+        st.query_params.clear()
+        for key, value in params.items():
+            st.query_params[key] = value
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -672,6 +696,7 @@ def _render_sale_detail_modal(
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
         st.session_state[DETAIL_MODAL_STATE_KEY] = None
         st.session_state[DETAIL_LAST_OPENED_KEY] = None
+        _clear_sale_detail_query_param()
         st.rerun()
 
 
@@ -815,6 +840,35 @@ gb.configure_default_column(
     filter=True,
 )
 
+detail_cell_renderer = JsCode(
+    """
+    class DetailCellRenderer {
+        init(params) {
+            this.eGui = document.createElement('div');
+            this.eGui.style.display = 'flex';
+            this.eGui.style.justifyContent = 'center';
+            this.eGui.style.alignItems = 'center';
+            this.eGui.style.height = '100%';
+
+            const saleId = params.data && params.data.saleId ? String(params.data.saleId) : '';
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('sale_detail', saleId);
+
+            this.eGui.innerHTML = `
+                <a href="${currentUrl.toString()}"
+                   target="_self"
+                   title="Ver detalhe"
+                   style="text-decoration:none;font-size:18px;line-height:1;cursor:pointer;">👁</a>
+            `;
+        }
+
+        getGui() {
+            return this.eGui;
+        }
+    }
+    """
+)
+
 gb.configure_column(
     DETAIL_COLUMN_ID,
     header_name="",
@@ -825,10 +879,10 @@ gb.configure_column(
     pinned="left",
     lockPosition=True,
     suppressMenu=True,
+    cellRenderer=detail_cell_renderer,
     cellStyle={
         "textAlign": "center",
         "fontSize": "18px",
-        "cursor": "pointer",
     },
 )
 
@@ -889,7 +943,7 @@ grid_options = gb.build()
 grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
-    update_mode=GridUpdateMode.VALUE_CHANGED | GridUpdateMode.CELL_CLICKED,
+    update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -897,18 +951,6 @@ grid_response = AgGrid(
     theme="streamlit",
     reload_data=False,
 )
-
-clicked_cell = grid_response.get("selected_cells")
-
-if clicked_cell:
-    cell = clicked_cell[0]
-    col_id = cell.get("colId")
-    row_index = cell.get("rowIndex")
-
-    if col_id == DETAIL_COLUMN_ID:
-        sale_id = grid_df.iloc[row_index]["saleId"]
-
-        st.session_state[DETAIL_MODAL_STATE_KEY] = str(sale_id)
 
 edited_df = pd.DataFrame(grid_response["data"])
 if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
@@ -941,6 +983,9 @@ if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
 elif isinstance(selected_rows, list) and len(selected_rows) > 0:
     selected_sale_id = str(selected_rows[0].get("saleId"))
 
+if selected_sale_id and selected_sale_id != st.session_state.get(DETAIL_LAST_OPENED_KEY):
+    st.session_state[DETAIL_MODAL_STATE_KEY] = selected_sale_id
+    st.session_state[DETAIL_LAST_OPENED_KEY] = selected_sale_id
 
 modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
 if modal_sale_id:
@@ -951,4 +996,4 @@ if modal_sale_id:
         allowed_account_ids=allowed_account_ids,
     )
 else:
-    st.caption("Seleciona uma linha ou clica no olho para abrir o detalhe da venda em modal.")
+    st.caption("Clica no olho para abrir o detalhe da venda em modal.")
