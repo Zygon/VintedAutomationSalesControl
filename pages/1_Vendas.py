@@ -90,6 +90,8 @@ DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
 DETAIL_ICON = "👁"
 DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
 DETAIL_MODAL_TOKEN_KEY = "sales_detail_modal_token"
+DETAIL_MODAL_OPEN_KEY = "sales_detail_modal_open"
+DETAIL_PAGE_INIT_KEY = "sales_detail_page_initialized"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -674,6 +676,7 @@ def _render_sale_detail_modal(
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
         st.session_state[DETAIL_MODAL_STATE_KEY] = None
         st.session_state[DETAIL_MODAL_TOKEN_KEY] = None
+        st.session_state[DETAIL_MODAL_OPEN_KEY] = False
         st.rerun()
 
 
@@ -689,6 +692,13 @@ date_range = filters["dateRange"]
 period_mode = st.session_state.get("period_mode", "Mês")
 
 st.title("Vendas")
+
+if DETAIL_PAGE_INIT_KEY not in st.session_state:
+    st.session_state[DETAIL_PAGE_INIT_KEY] = True
+    st.session_state[DETAIL_MODAL_STATE_KEY] = None
+    st.session_state[DETAIL_MODAL_TOKEN_KEY] = None
+    st.session_state[DETAIL_MODAL_OPEN_KEY] = False
+
 
 sales_df = load_collection_df(
     "sales",
@@ -981,7 +991,7 @@ with info_col:
     )
 
 modal_sale_id = str(st.session_state.get(DETAIL_MODAL_STATE_KEY) or "").strip()
-if modal_sale_id:
+if bool(st.session_state.get(DETAIL_MODAL_OPEN_KEY, False)) and modal_sale_id:
     _render_sale_detail_modal(
         sale_id=modal_sale_id,
         sales_df=sales_df,
