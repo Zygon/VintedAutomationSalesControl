@@ -3,7 +3,7 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
-from urllib.parse import urlencode
+import time
 
 import pandas as pd
 import plotly.express as px
@@ -86,10 +86,10 @@ WEEKDAY_LABELS_PT = {
 }
 
 DETAIL_COLUMN_ID = "__view_detail__"
+DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
 DETAIL_ICON = "👁"
 DETAIL_MODAL_SALE_ID_KEY = "sales_detail_modal_sale_id"
 DETAIL_LAST_TRIGGER_KEY = "sales_detail_last_trigger_token"
-DETAIL_QUERY_PARAM = "sale_detail"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -606,21 +606,50 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _get_query_params() -> dict:
-    try:
-        return dict(st.query_params)
-    except Exception:
-        return st.experimental_get_query_params()
+def _extract_detail_trigger(original_df: pd.DataFrame, edited_df: pd.DataFrame):
+    if original_df.empty or edited_df.empty:
+        return None, None
 
+    if "saleId" not in original_df.columns or "saleId" not in edited_df.columns:
+        return None, None
 
-def _set_query_params(params: dict) -> None:
-    clean_params = {k: v for k, v in params.items() if v not in (None, "", [], ())}
-    try:
-        st.query_params.clear()
-        for key, value in clean_params.items():
-            st.query_params[key] = value
-    except Exception:
-        st.experimental_set_query_params(**clean_params)
+    if DETAIL_TRIGGER_COLUMN_ID not in original_df.columns or DETAIL_TRIGGER_COLUMN_ID not in edited_df.columns:
+        return None, None
+
+    original = original_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
+    edited = edited_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
+
+    original["saleId"] = original["saleId"].astype(str)
+    edited["saleId"] = edited["saleId"].astype(str)
+    original[DETAIL_TRIGGER_COLUMN_ID] = original[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
+    edited[DETAIL_TRIGGER_COLUMN_ID] = edited[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
+
+    merged = original.merge(
+        edited,
+        on="saleId",
+        suffixes=("_old", "_new"),
+    )
+
+    changed = merged[
+        (merged[f"{DETAIL_TRIGGER_COLUMN_ID}_new"] != merged[f"{DETAIL_TRIGGER_COLUMN_ID}_old"])
+        & (merged[f"{DETAIL_TRIGGER_COLUMN_ID}_new"].str.strip() != "")
+    ]
+
+    if changed.empty:
+        return None, None
+
+    latest_row = changed.iloc[-1]
+    token = str(latest_row[f"{DETAIL_TRIGGER_COLUMN_ID}_new"]).strip()
+    parts = token.split("__", 1)
+
+    if len(parts) != 2:
+        return None, None
+
+    sale_id = parts[0].strip()
+    if not sale_id:
+        return None, None
+
+    return sale_id, token
 
 
 @st.dialog("Detalhe da venda", width="large")
@@ -634,64 +663,63 @@ def _render_sale_detail_modal(
 
     if selected_sale.empty:
         st.warning("Não foi possível localizar a venda selecionada.")
+        return
+
+    sale_row = selected_sale.iloc[0].to_dict()
+
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
+        st.metric("Order ID", sale_row.get("orderId") or "-")
+    with summary_cols[1]:
+        st.metric("Status", sale_row.get("status") or "-")
+    with summary_cols[2]:
+        value = sale_row.get("value")
+        st.metric("Valor", format_currency(float(value)) if value is not None else "-")
+    with summary_cols[3]:
+        st.metric("SKU", sale_row.get("sku") or "-")
+
+    st.markdown("#### saleItems")
+    sale_items_df = load_sale_items_for_sale(
+        str(sale_id),
+        account_id=account_filter,
+        allowed_account_ids=allowed_account_ids,
+    )
+
+    if sale_items_df.empty:
+        st.info("Sem saleItems para esta venda.")
     else:
-        sale_row = selected_sale.iloc[0].to_dict()
+        sale_items_visible_cols = [
+            c for c in [
+                "articleTitle",
+                "sku",
+                "allocatedValue",
+                "currency",
+                "shippingCode",
+                "buyerUsername",
+            ] if c in sale_items_df.columns
+        ]
+        render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
 
-        summary_cols = st.columns(4)
-        with summary_cols[0]:
-            st.metric("Order ID", sale_row.get("orderId") or "-")
-        with summary_cols[1]:
-            st.metric("Status", sale_row.get("status") or "-")
-        with summary_cols[2]:
-            value = sale_row.get("value")
-            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
-        with summary_cols[3]:
-            st.metric("SKU", sale_row.get("sku") or "-")
-
-        st.markdown("#### saleItems")
-        sale_items_df = load_sale_items_for_sale(
-            str(sale_id),
+    st.markdown("#### Label associada")
+    matched_label_id = sale_row.get("matchedLabelId")
+    if not matched_label_id:
+        st.info("Esta venda ainda não tem label associada.")
+    else:
+        label = load_label_by_id(
+            str(matched_label_id),
             account_id=account_filter,
             allowed_account_ids=allowed_account_ids,
         )
 
-        if sale_items_df.empty:
-            st.info("Sem saleItems para esta venda.")
+        if not label:
+            st.warning("Label associada não encontrada.")
         else:
-            sale_items_visible_cols = [
-                c for c in [
-                    "articleTitle",
-                    "sku",
-                    "allocatedValue",
-                    "currency",
-                    "shippingCode",
-                    "buyerUsername",
-                ] if c in sale_items_df.columns
-            ]
-            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
-
-        st.markdown("#### Label associada")
-        matched_label_id = sale_row.get("matchedLabelId")
-        if not matched_label_id:
-            st.info("Esta venda ainda não tem label associada.")
-        else:
-            label = load_label_by_id(
-                str(matched_label_id),
-                account_id=account_filter,
-                allowed_account_ids=allowed_account_ids,
-            )
-
-            if not label:
-                st.warning("Label associada não encontrada.")
-            else:
-                label_df = _build_label_table(label)
-                render_dataframe(label_df)
+            label_df = _build_label_table(label)
+            render_dataframe(label_df)
 
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
-        params = _get_query_params()
-        params.pop(DETAIL_QUERY_PARAM, None)
-        _set_query_params(params)
+        st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
         st.rerun()
 
 
@@ -831,15 +859,8 @@ support_columns = [
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
 
-query_params = _get_query_params()
-base_params = {k: v for k, v in query_params.items() if k != DETAIL_QUERY_PARAM}
-
-def _build_detail_href(sale_id: str) -> str:
-    params = dict(base_params)
-    params[DETAIL_QUERY_PARAM] = str(sale_id)
-    return f"?{urlencode(params, doseq=True)}"
-
-grid_df.insert(0, DETAIL_COLUMN_ID, grid_df["saleId"].astype(str).map(_build_detail_href))
+grid_df.insert(0, DETAIL_TRIGGER_COLUMN_ID, "")
+grid_df.insert(0, DETAIL_COLUMN_ID, DETAIL_ICON)
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -849,28 +870,37 @@ gb.configure_default_column(
     filter=True,
 )
 
-link_renderer = JsCode(
+detail_button_renderer = JsCode(
     f"""
-    class DetailLinkRenderer {{
+    class DetailButtonRenderer {{
         init(params) {{
-            this.eGui = document.createElement('a');
-            this.eGui.setAttribute('href', params.value || '#');
-            this.eGui.setAttribute('title', 'Ver detalhe');
-            this.eGui.style.display = 'inline-flex';
-            this.eGui.style.alignItems = 'center';
-            this.eGui.style.justifyContent = 'center';
-            this.eGui.style.width = '100%';
-            this.eGui.style.height = '100%';
-            this.eGui.style.textDecoration = 'none';
-            this.eGui.style.fontSize = '18px';
-            this.eGui.style.cursor = 'pointer';
+            this.params = params;
+            this.eGui = document.createElement('button');
             this.eGui.innerText = '{DETAIL_ICON}';
-            this.eGui.addEventListener('click', function(event) {{
-                event.stopPropagation();
+            this.eGui.setAttribute('title', 'Ver detalhe');
+            this.eGui.style.width = '32px';
+            this.eGui.style.height = '32px';
+            this.eGui.style.border = 'none';
+            this.eGui.style.background = 'transparent';
+            this.eGui.style.cursor = 'pointer';
+            this.eGui.style.fontSize = '18px';
+            this.eGui.style.lineHeight = '1';
+            this.eGui.style.padding = '0';
+            this.eGui.addEventListener('click', () => {{
+                const saleId = String((params.data && params.data.saleId) || '').trim();
+                if (!saleId) {{
+                    return;
+                }}
+                const token = saleId + '__' + Date.now();
+                params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', token);
             }});
         }}
         getGui() {{
             return this.eGui;
+        }}
+        refresh(params) {{
+            this.params = params;
+            return true;
         }}
     }}
     """
@@ -886,7 +916,7 @@ gb.configure_column(
     pinned="left",
     lockPosition=True,
     suppressMenu=True,
-    cellRenderer=link_renderer,
+    cellRenderer=detail_button_renderer,
     cellStyle={
         "textAlign": "center",
         "paddingLeft": "0px",
@@ -894,6 +924,7 @@ gb.configure_column(
     },
 )
 
+gb.configure_column(DETAIL_TRIGGER_COLUMN_ID, hide=True)
 gb.configure_column("saleId", hide=True)
 gb.configure_column("matchedLabelId", hide=True)
 
@@ -958,8 +989,16 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
-if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
-    edited_df = edited_df.drop(columns=[DETAIL_COLUMN_ID])
+detail_sale_id, detail_trigger_token = _extract_detail_trigger(grid_df, edited_df)
+
+if detail_sale_id and detail_trigger_token != st.session_state.get(DETAIL_LAST_TRIGGER_KEY):
+    st.session_state[DETAIL_MODAL_SALE_ID_KEY] = str(detail_sale_id)
+    st.session_state[DETAIL_LAST_TRIGGER_KEY] = str(detail_trigger_token)
+
+if not edited_df.empty:
+    drop_cols = [c for c in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns]
+    if drop_cols:
+        edited_df = edited_df.drop(columns=drop_cols)
 
 save_col, info_col = st.columns([1, 3])
 
@@ -980,10 +1019,10 @@ with info_col:
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-modal_sale_id = str(query_params.get(DETAIL_QUERY_PARAM, "") or "").strip()
+modal_sale_id = st.session_state.get(DETAIL_MODAL_SALE_ID_KEY)
 if modal_sale_id:
     _render_sale_detail_modal(
-        sale_id=modal_sale_id,
+        sale_id=str(modal_sale_id),
         sales_df=sales_df,
         account_filter=account_filter,
         allowed_account_ids=allowed_account_ids,
