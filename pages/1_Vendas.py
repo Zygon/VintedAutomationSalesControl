@@ -3,6 +3,7 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
+from urllib.parse import urlencode
 
 import pandas as pd
 import plotly.express as px
@@ -74,6 +75,11 @@ STATUS_TEXT_COLORS = {
     "CANCELED": "#41464b",
 }
 
+DETAIL_COLUMN_ID = "__view_detail__"
+DETAIL_ICON = "👁"
+DETAIL_QUERY_PARAM = "sale_detail"
+DETAIL_LAST_QUERY_VALUE_KEY = "sales_detail_last_query_value"
+
 WEEKDAY_LABELS_PT = {
     0: "Seg",
     1: "Ter",
@@ -83,13 +89,6 @@ WEEKDAY_LABELS_PT = {
     5: "Sáb",
     6: "Dom",
 }
-
-DETAIL_ICON_COLUMN_ID = "__view_detail__"
-DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
-DETAIL_ICON = "👁"
-DETAIL_MODAL_SALE_ID_KEY = "sales_detail_modal_sale_id"
-DETAIL_LAST_TRIGGER_TOKEN_KEY = "sales_detail_last_trigger_token"
-
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -606,6 +605,25 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
+
+
+def _get_query_params() -> dict:
+    try:
+        return dict(st.query_params)
+    except Exception:
+        return st.experimental_get_query_params()
+
+
+def _set_query_params(params: dict) -> None:
+    clean_params = {k: v for k, v in params.items() if v not in (None, "", [], ())}
+    try:
+        st.query_params.clear()
+        for key, value in clean_params.items():
+            st.query_params[key] = value
+    except Exception:
+        st.experimental_set_query_params(**clean_params)
+
+
 @st.dialog("Detalhe da venda", width="large")
 def _render_sale_detail_modal(
     sale_id: str,
@@ -672,7 +690,9 @@ def _render_sale_detail_modal(
 
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
-        st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
+        params = _get_query_params()
+        params.pop(DETAIL_QUERY_PARAM, None)
+        _set_query_params(params)
         st.rerun()
 
 
@@ -806,8 +826,19 @@ support_columns = [
 
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
-grid_df.insert(0, DETAIL_ICON_COLUMN_ID, DETAIL_ICON)
-grid_df[DETAIL_TRIGGER_COLUMN_ID] = ""
+
+query_params = _get_query_params()
+base_params = {k: v for k, v in query_params.items() if k != DETAIL_QUERY_PARAM}
+
+def _build_detail_href(sale_id: str) -> str:
+    params = dict(base_params)
+    params[DETAIL_QUERY_PARAM] = str(sale_id)
+    return f"?{urlencode(params, doseq=True)}"
+
+if not grid_df.empty:
+    grid_df.insert(0, DETAIL_COLUMN_ID, grid_df["saleId"].astype(str).map(_build_detail_href))
+else:
+    grid_df.insert(0, DETAIL_COLUMN_ID, pd.Series(dtype="object"))
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -817,30 +848,24 @@ gb.configure_default_column(
     filter=True,
 )
 
-detail_button_renderer = JsCode(
+link_renderer = JsCode(
     f"""
-    class DetailButtonRenderer {{
+    class DetailLinkRenderer {{
         init(params) {{
-            this.params = params;
-            this.eGui = document.createElement('button');
-            this.eGui.innerText = '{DETAIL_ICON}';
+            this.eGui = document.createElement('a');
+            this.eGui.setAttribute('href', params.value || '#');
             this.eGui.setAttribute('title', 'Ver detalhe');
+            this.eGui.style.display = 'inline-flex';
+            this.eGui.style.alignItems = 'center';
+            this.eGui.style.justifyContent = 'center';
             this.eGui.style.width = '100%';
             this.eGui.style.height = '100%';
-            this.eGui.style.border = 'none';
-            this.eGui.style.background = 'transparent';
-            this.eGui.style.cursor = 'pointer';
+            this.eGui.style.textDecoration = 'none';
             this.eGui.style.fontSize = '18px';
-            this.eGui.style.padding = '0';
-            this.eGui.style.margin = '0';
-            this.eGui.addEventListener('click', (event) => {{
-                event.preventDefault();
+            this.eGui.style.cursor = 'pointer';
+            this.eGui.innerText = '{DETAIL_ICON}';
+            this.eGui.addEventListener('click', function(event) {{
                 event.stopPropagation();
-                const saleId = String((params.data && params.data.saleId) || '').trim();
-                if (!saleId) {{
-                    return;
-                }}
-                params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', `${{saleId}}__${{Date.now()}}`);
             }});
         }}
         getGui() {{
@@ -851,7 +876,7 @@ detail_button_renderer = JsCode(
 )
 
 gb.configure_column(
-    DETAIL_ICON_COLUMN_ID,
+    DETAIL_COLUMN_ID,
     header_name="",
     editable=False,
     sortable=False,
@@ -860,7 +885,7 @@ gb.configure_column(
     pinned="left",
     lockPosition=True,
     suppressMenu=True,
-    cellRenderer=detail_button_renderer,
+    cellRenderer=link_renderer,
     cellStyle={
         "textAlign": "center",
         "paddingLeft": "0px",
@@ -870,7 +895,6 @@ gb.configure_column(
 
 gb.configure_column("saleId", hide=True)
 gb.configure_column("matchedLabelId", hide=True)
-gb.configure_column(DETAIL_TRIGGER_COLUMN_ID, hide=True)
 
 if "status" in grid_df.columns:
     gb.configure_column(
@@ -897,7 +921,7 @@ status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
 row_style_jscode = JsCode(
     f"""
     function(params) {{
-        const status = String((params.data && params.data.status) || "").toUpperCase();
+        const status = String((params.data && params.data.status) || '').toUpperCase();
         const bgColors = {status_colors_js};
         const textColors = {status_text_colors_js};
 
@@ -933,45 +957,8 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
-
-trigger_sale_id = None
-if (
-    not edited_df.empty
-    and DETAIL_TRIGGER_COLUMN_ID in edited_df.columns
-    and DETAIL_TRIGGER_COLUMN_ID in grid_df.columns
-):
-    original_triggers = grid_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
-    current_triggers = edited_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
-
-    original_triggers["saleId"] = original_triggers["saleId"].astype(str)
-    current_triggers["saleId"] = current_triggers["saleId"].astype(str)
-    original_triggers[DETAIL_TRIGGER_COLUMN_ID] = original_triggers[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
-    current_triggers[DETAIL_TRIGGER_COLUMN_ID] = current_triggers[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
-
-    trigger_diff = original_triggers.merge(
-        current_triggers,
-        on="saleId",
-        suffixes=("_old", "_new"),
-    )
-
-    changed_triggers = trigger_diff[
-        (trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_old"] != trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_new"])
-        & (trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_new"].str.strip() != "")
-    ]
-
-    if not changed_triggers.empty:
-        latest_trigger = changed_triggers.iloc[-1][f"{DETAIL_TRIGGER_COLUMN_ID}_new"]
-        last_trigger_token = str(st.session_state.get(DETAIL_LAST_TRIGGER_TOKEN_KEY) or "")
-
-        if str(latest_trigger) != last_trigger_token:
-            trigger_sale_id = str(latest_trigger).split("__", 1)[0].strip()
-            st.session_state[DETAIL_LAST_TRIGGER_TOKEN_KEY] = str(latest_trigger)
-            st.session_state[DETAIL_MODAL_SALE_ID_KEY] = trigger_sale_id
-
-if not edited_df.empty:
-    drop_cols = [c for c in [DETAIL_ICON_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns]
-    if drop_cols:
-        edited_df = edited_df.drop(columns=drop_cols)
+if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
+    edited_df = edited_df.drop(columns=[DETAIL_COLUMN_ID])
 
 save_col, info_col = st.columns([1, 3])
 
@@ -992,8 +979,12 @@ with info_col:
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-modal_sale_id = str(st.session_state.get(DETAIL_MODAL_SALE_ID_KEY) or "").strip()
-if modal_sale_id:
+modal_sale_id = str(query_params.get(DETAIL_QUERY_PARAM, "") or "").strip()
+last_query_modal_sale_id = st.session_state.get(DETAIL_LAST_QUERY_VALUE_KEY)
+should_open_modal = bool(modal_sale_id) and modal_sale_id != last_query_modal_sale_id
+st.session_state[DETAIL_LAST_QUERY_VALUE_KEY] = modal_sale_id or None
+
+if should_open_modal:
     _render_sale_detail_modal(
         sale_id=modal_sale_id,
         sales_df=sales_df,
