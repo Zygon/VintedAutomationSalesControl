@@ -24,6 +24,7 @@ from services.metrics import (
     safe_count,
     safe_sum,
     status_breakdown,
+    time_series,
 )
 
 STATUS_OPTIONS = [
@@ -190,11 +191,38 @@ def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _normalize_date_range(date_range):
-    if not isinstance(date_range, (list, tuple)) or len(date_range) != 2:
+def _extract_date_range(date_range):
+    """
+    Tenta suportar vários formatos comuns:
+    - (start, end)
+    - [start, end]
+    - {"start": ..., "end": ...}
+    - {"from": ..., "to": ...}
+    - {"date_from": ..., "date_to": ...}
+    - {"startDate": ..., "endDate": ...}
+    """
+
+    if date_range is None:
         return None, None
 
-    start_raw, end_raw = date_range[0], date_range[1]
+    start_raw = None
+    end_raw = None
+
+    if isinstance(date_range, (list, tuple)) and len(date_range) == 2:
+        start_raw, end_raw = date_range[0], date_range[1]
+
+    elif isinstance(date_range, dict):
+        for start_key, end_key in [
+            ("start", "end"),
+            ("from", "to"),
+            ("date_from", "date_to"),
+            ("startDate", "endDate"),
+            ("start_date", "end_date"),
+        ]:
+            if start_key in date_range and end_key in date_range:
+                start_raw = date_range.get(start_key)
+                end_raw = date_range.get(end_key)
+                break
 
     if start_raw is None or end_raw is None:
         return None, None
@@ -288,10 +316,11 @@ def _build_aligned_period_series(
     previous_work = previous_work.dropna(subset=["_dt"])
 
     current_work["value"] = pd.to_numeric(
-        current_work["value"], errors="coerce"
+        current_work.get("value", 0), errors="coerce"
     ).fillna(0)
+
     previous_work["value"] = pd.to_numeric(
-        previous_work["value"], errors="coerce"
+        previous_work.get("value", 0), errors="coerce"
     ).fillna(0)
 
     current_index = pd.date_range(
@@ -327,27 +356,17 @@ def _build_aligned_period_series(
         .reindex(previous_index, fill_value=0)
     )
 
-    slot_count = max(len(current_series), len(previous_series))
-
-    current_series = current_series.reindex(
-        range(slot_count),
-        fill_value=0,
-    )
-    previous_series = previous_series.reindex(
-        range(slot_count),
-        fill_value=0,
-    )
+    slot_count = min(len(current_series), len(previous_series))
+    current_series = current_series.iloc[:slot_count]
+    previous_series = previous_series.iloc[:slot_count]
+    current_index = current_index[:slot_count]
 
     labels = []
-    for i in range(slot_count):
-        if i < len(current_index):
-            ts = current_index[i]
-            if freq == "W-MON":
-                labels.append(f"Semana {ts.strftime('%d/%m')}")
-            else:
-                labels.append(ts.strftime(config["label_format"]))
+    for ts in current_index:
+        if freq == "W-MON":
+            labels.append(f"Semana {ts.strftime('%d/%m')}")
         else:
-            labels.append(str(i + 1))
+            labels.append(ts.strftime(config["label_format"]))
 
     return pd.DataFrame(
         {
@@ -421,7 +440,7 @@ filters = get_active_filters()
 selected_account_id = filters["accountId"]
 allowed_account_ids = filters["allowedAccountIds"]
 account_filter = None if selected_account_id in (None, "__ALL__") else selected_account_id
-date_range = filters["dateRange"]
+date_range = filters.get("dateRange")
 
 st.title("Vendas")
 
@@ -433,8 +452,9 @@ sales_df = load_collection_df(
     date_range=date_range,
 )
 
+current_start, current_end = _extract_date_range(date_range)
 previous_sales_df = pd.DataFrame()
-current_start, current_end = _normalize_date_range(date_range)
+previous_start, previous_end = None, None
 
 if current_start is not None and current_end is not None:
     previous_start, previous_end = _shift_date_range_back(current_start, current_end)
@@ -445,34 +465,19 @@ if current_start is not None and current_end is not None:
         date_field="soldAt",
         date_range=(previous_start, previous_end),
     )
-else:
-    previous_start, previous_end = None, None
 
 if not sales_df.empty:
     if "soldAtParsed" in sales_df.columns:
-        sales_df = sales_df.sort_values(
-            "soldAtParsed", ascending=False, na_position="last"
-        )
+        sales_df = sales_df.sort_values("soldAtParsed", ascending=False, na_position="last")
     elif "soldAt" in sales_df.columns:
-        sales_df = sales_df.sort_values(
-            "soldAt", ascending=False, na_position="last"
-        )
-
-if not previous_sales_df.empty:
-    if "soldAtParsed" in previous_sales_df.columns:
-        previous_sales_df = previous_sales_df.sort_values(
-            "soldAtParsed", ascending=False, na_position="last"
-        )
-    elif "soldAt" in previous_sales_df.columns:
-        previous_sales_df = previous_sales_df.sort_values(
-            "soldAt", ascending=False, na_position="last"
-        )
+        sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
 
 valid_sales_df = (
     sales_df[sales_df["status"] != "CANCELED"]
     if not sales_df.empty and "status" in sales_df.columns
     else sales_df
 )
+
 canceled_sales_df = (
     sales_df[sales_df["status"] == "CANCELED"]
     if not sales_df.empty and "status" in sales_df.columns
@@ -507,7 +512,28 @@ with left:
             title="Valor de vendas por período",
         )
     else:
-        st.info("Seleciona um intervalo de datas válido para comparar com o período anterior.")
+        series_df = (
+            time_series(sales_df, "soldAtParsed", "value")
+            if not sales_df.empty
+            else pd.DataFrame()
+        )
+
+        if series_df.empty:
+            st.info("Sem dados para apresentar.")
+        else:
+            fig = px.line(
+                series_df,
+                x="period",
+                y="value",
+                title="Valor de vendas por período",
+            )
+            fig.update_layout(
+                margin=dict(l=10, r=10, t=50, b=10),
+                xaxis_title=None,
+                yaxis_title=None,
+                height=350,
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 with right:
     status_chart_df = _build_status_chart_df(sales_df)
@@ -656,10 +682,7 @@ else:
             st.metric("Status", sale_row.get("status") or "-")
         with summary_cols[2]:
             value = sale_row.get("value")
-            st.metric(
-                "Valor",
-                format_currency(float(value)) if value is not None else "-",
-            )
+            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
         with summary_cols[3]:
             st.metric("SKU", sale_row.get("sku") or "-")
 
