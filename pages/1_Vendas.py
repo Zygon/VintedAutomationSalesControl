@@ -72,6 +72,11 @@ WEEKDAY_LABELS_PT = {
     6: "Dom",
 }
 
+DETAIL_COLUMN_ID = "__view_detail__"
+DETAIL_ICON = "👁"
+DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
+DETAIL_LAST_OPENED_KEY = "sales_detail_last_opened_sale_id"
+
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
@@ -587,6 +592,77 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
+@st.dialog("Detalhe da venda", width="large")
+def _render_sale_detail_modal(
+    sale_id: str,
+    sales_df: pd.DataFrame,
+    account_filter,
+    allowed_account_ids,
+) -> None:
+    selected_sale = sales_df[sales_df["saleId"].astype(str) == str(sale_id)]
+
+    if selected_sale.empty:
+        st.warning("Não foi possível localizar a venda selecionada.")
+    else:
+        sale_row = selected_sale.iloc[0].to_dict()
+
+        summary_cols = st.columns(4)
+        with summary_cols[0]:
+            st.metric("Order ID", sale_row.get("orderId") or "-")
+        with summary_cols[1]:
+            st.metric("Status", sale_row.get("status") or "-")
+        with summary_cols[2]:
+            value = sale_row.get("value")
+            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
+        with summary_cols[3]:
+            st.metric("SKU", sale_row.get("sku") or "-")
+
+        st.markdown("#### saleItems")
+        sale_items_df = load_sale_items_for_sale(
+            str(sale_id),
+            account_id=account_filter,
+            allowed_account_ids=allowed_account_ids,
+        )
+
+        if sale_items_df.empty:
+            st.info("Sem saleItems para esta venda.")
+        else:
+            sale_items_visible_cols = [
+                c for c in [
+                    "articleTitle",
+                    "sku",
+                    "allocatedValue",
+                    "currency",
+                    "shippingCode",
+                    "buyerUsername",
+                ] if c in sale_items_df.columns
+            ]
+            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
+
+        st.markdown("#### Label associada")
+        matched_label_id = sale_row.get("matchedLabelId")
+        if not matched_label_id:
+            st.info("Esta venda ainda não tem label associada.")
+        else:
+            label = load_label_by_id(
+                str(matched_label_id),
+                account_id=account_filter,
+                allowed_account_ids=allowed_account_ids,
+            )
+
+            if not label:
+                st.warning("Label associada não encontrada.")
+            else:
+                label_df = _build_label_table(label)
+                render_dataframe(label_df)
+
+    st.divider()
+    if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
+        st.session_state[DETAIL_MODAL_STATE_KEY] = None
+        st.session_state[DETAIL_LAST_OPENED_KEY] = None
+        st.rerun()
+
+
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -698,9 +774,8 @@ with right:
 
 st.subheader("Tabela de vendas")
 
-table_columns = [
+visible_columns = [
     c for c in [
-        "saleId",
         "soldAt",
         "articleTitle",
         "sku",
@@ -709,12 +784,16 @@ table_columns = [
         "orderId",
         "accountId",
         "buyerUsername",
-        "matchedLabelId",
     ] if c in sales_df.columns
 ]
 
-table_df = sales_df[table_columns].copy()
+support_columns = [
+    c for c in ["saleId", "matchedLabelId"] if c in sales_df.columns
+]
+
+table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
+grid_df.insert(0, DETAIL_COLUMN_ID, DETAIL_ICON)
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -722,6 +801,23 @@ gb.configure_default_column(
     resizable=True,
     sortable=True,
     filter=True,
+)
+
+gb.configure_column(
+    DETAIL_COLUMN_ID,
+    header_name="",
+    editable=False,
+    sortable=False,
+    filter=False,
+    width=55,
+    pinned="left",
+    lockPosition=True,
+    suppressMenu=True,
+    cellStyle={
+        "textAlign": "center",
+        "fontSize": "18px",
+        "cursor": "pointer",
+    },
 )
 
 gb.configure_column("saleId", hide=True)
@@ -746,6 +842,7 @@ gb.configure_selection(
 gb.configure_grid_options(
     rowHeight=40,
     animateRows=False,
+    suppressCellFocus=False,
 )
 
 status_colors_js = json.dumps(STATUS_COLORS)
@@ -790,6 +887,8 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
+if not edited_df.empty and DETAIL_COLUMN_ID in edited_df.columns:
+    edited_df = edited_df.drop(columns=[DETAIL_COLUMN_ID])
 
 save_col, info_col = st.columns([1, 3])
 
@@ -818,64 +917,17 @@ if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
 elif isinstance(selected_rows, list) and len(selected_rows) > 0:
     selected_sale_id = str(selected_rows[0].get("saleId"))
 
-st.subheader("Detalhe da venda selecionada")
+if selected_sale_id and selected_sale_id != st.session_state.get(DETAIL_LAST_OPENED_KEY):
+    st.session_state[DETAIL_MODAL_STATE_KEY] = selected_sale_id
+    st.session_state[DETAIL_LAST_OPENED_KEY] = selected_sale_id
 
-if not selected_sale_id:
-    st.info("Seleciona uma linha na tabela de vendas para ver os saleItems e a label associada.")
+modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
+if modal_sale_id:
+    _render_sale_detail_modal(
+        sale_id=str(modal_sale_id),
+        sales_df=sales_df,
+        account_filter=account_filter,
+        allowed_account_ids=allowed_account_ids,
+    )
 else:
-    selected_sale = sales_df[sales_df["saleId"].astype(str) == selected_sale_id]
-
-    if selected_sale.empty:
-        st.warning("Não foi possível localizar a venda selecionada.")
-    else:
-        sale_row = selected_sale.iloc[0].to_dict()
-
-        summary_cols = st.columns(4)
-        with summary_cols[0]:
-            st.metric("Order ID", sale_row.get("orderId") or "-")
-        with summary_cols[1]:
-            st.metric("Status", sale_row.get("status") or "-")
-        with summary_cols[2]:
-            value = sale_row.get("value")
-            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
-        with summary_cols[3]:
-            st.metric("SKU", sale_row.get("sku") or "-")
-
-        st.markdown("#### saleItems")
-        sale_items_df = load_sale_items_for_sale(
-            selected_sale_id,
-            account_id=account_filter,
-            allowed_account_ids=allowed_account_ids,
-        )
-
-        if sale_items_df.empty:
-            st.info("Sem saleItems para esta venda.")
-        else:
-            sale_items_visible_cols = [
-                c for c in [
-                    "articleTitle",
-                    "sku",
-                    "allocatedValue",
-                    "currency",
-                    "shippingCode",
-                    "buyerUsername",
-                ] if c in sale_items_df.columns
-            ]
-            render_dataframe(sale_items_df[sale_items_visible_cols] if sale_items_visible_cols else sale_items_df)
-
-        st.markdown("#### Label associada")
-        matched_label_id = sale_row.get("matchedLabelId")
-        if not matched_label_id:
-            st.info("Esta venda ainda não tem label associada.")
-        else:
-            label = load_label_by_id(
-                str(matched_label_id),
-                account_id=account_filter,
-                allowed_account_ids=allowed_account_ids,
-            )
-
-            if not label:
-                st.warning("Label associada não encontrada.")
-            else:
-                label_df = _build_label_table(label)
-                render_dataframe(label_df)
+    st.caption("Seleciona uma linha ou clica no olho para abrir o detalhe da venda em modal.")
