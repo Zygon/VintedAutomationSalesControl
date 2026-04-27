@@ -6,11 +6,11 @@ import json
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 from components.auth_guard import render_user_box, require_login
-from components.charts import render_line_chart
 from components.filters import get_active_filters, render_global_filters
 from components.tables import render_dataframe, render_kpis
 from services.firestore_queries import (
@@ -24,7 +24,6 @@ from services.metrics import (
     safe_count,
     safe_sum,
     status_breakdown,
-    time_series,
 )
 
 STATUS_OPTIONS = [
@@ -191,6 +190,229 @@ def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 
+def _normalize_date_range(date_range):
+    if not isinstance(date_range, (list, tuple)) or len(date_range) != 2:
+        return None, None
+
+    start_raw, end_raw = date_range[0], date_range[1]
+
+    if start_raw is None or end_raw is None:
+        return None, None
+
+    start = pd.to_datetime(start_raw, errors="coerce")
+    end = pd.to_datetime(end_raw, errors="coerce")
+
+    if pd.isna(start) or pd.isna(end):
+        return None, None
+
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+
+    if start > end:
+        start, end = end, start
+
+    if (
+        end.hour == 0
+        and end.minute == 0
+        and end.second == 0
+        and end.microsecond == 0
+    ):
+        end = end + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+
+    return start, end
+
+
+def _shift_date_range_back(start: pd.Timestamp, end: pd.Timestamp):
+    duration = end - start
+    previous_end = start - pd.Timedelta(microseconds=1)
+    previous_start = previous_end - duration
+    return previous_start, previous_end
+
+
+def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
+    if df.empty:
+        return pd.Series(dtype="datetime64[ns]")
+
+    if "soldAtParsed" in df.columns:
+        series = pd.to_datetime(df["soldAtParsed"], errors="coerce")
+        if series.notna().any():
+            return series
+
+    if "soldAt" in df.columns:
+        series = pd.to_datetime(df["soldAt"], errors="coerce")
+        if series.notna().any():
+            return series
+
+    return pd.Series(dtype="datetime64[ns]")
+
+
+def _infer_bucket_config(start: pd.Timestamp, end: pd.Timestamp):
+    total_seconds = max((end - start).total_seconds(), 1)
+
+    if total_seconds <= 36 * 3600:
+        return {
+            "freq": "H",
+            "label_format": "%H:%M",
+        }
+
+    if total_seconds <= 62 * 24 * 3600:
+        return {
+            "freq": "D",
+            "label_format": "%d/%m",
+        }
+
+    return {
+        "freq": "W-MON",
+        "label_format": "%d/%m",
+    }
+
+
+def _build_aligned_period_series(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+) -> pd.DataFrame:
+    config = _infer_bucket_config(current_start, current_end)
+    freq = config["freq"]
+
+    current_work = current_df.copy()
+    previous_work = previous_df.copy()
+
+    current_work["_dt"] = _get_datetime_series(current_work)
+    previous_work["_dt"] = _get_datetime_series(previous_work)
+
+    current_work = current_work.dropna(subset=["_dt"])
+    previous_work = previous_work.dropna(subset=["_dt"])
+
+    current_work["value"] = pd.to_numeric(
+        current_work["value"], errors="coerce"
+    ).fillna(0)
+    previous_work["value"] = pd.to_numeric(
+        previous_work["value"], errors="coerce"
+    ).fillna(0)
+
+    current_index = pd.date_range(
+        start=current_start.floor(freq),
+        end=current_end.floor(freq),
+        freq=freq,
+    )
+    previous_index = pd.date_range(
+        start=previous_start.floor(freq),
+        end=previous_end.floor(freq),
+        freq=freq,
+    )
+
+    if len(current_index) == 0:
+        current_index = pd.DatetimeIndex([current_start.floor(freq)])
+
+    if len(previous_index) == 0:
+        previous_index = pd.DatetimeIndex([previous_start.floor(freq)])
+
+    current_series = (
+        current_work.set_index("_dt")
+        .sort_index()["value"]
+        .resample(freq)
+        .sum()
+        .reindex(current_index, fill_value=0)
+    )
+
+    previous_series = (
+        previous_work.set_index("_dt")
+        .sort_index()["value"]
+        .resample(freq)
+        .sum()
+        .reindex(previous_index, fill_value=0)
+    )
+
+    slot_count = max(len(current_series), len(previous_series))
+
+    current_series = current_series.reindex(
+        range(slot_count),
+        fill_value=0,
+    )
+    previous_series = previous_series.reindex(
+        range(slot_count),
+        fill_value=0,
+    )
+
+    labels = []
+    for i in range(slot_count):
+        if i < len(current_index):
+            ts = current_index[i]
+            if freq == "W-MON":
+                labels.append(f"Semana {ts.strftime('%d/%m')}")
+            else:
+                labels.append(ts.strftime(config["label_format"]))
+        else:
+            labels.append(str(i + 1))
+
+    return pd.DataFrame(
+        {
+            "label": labels,
+            "current_value": current_series.values,
+            "previous_value": previous_series.values,
+        }
+    )
+
+
+def _render_sales_comparison_chart(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+    title: str,
+) -> None:
+    aligned_df = _build_aligned_period_series(
+        current_df=current_df,
+        previous_df=previous_df,
+        current_start=current_start,
+        current_end=current_end,
+        previous_start=previous_start,
+        previous_end=previous_end,
+    )
+
+    if aligned_df.empty:
+        st.info("Sem dados para apresentar.")
+        return
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=aligned_df["label"],
+            y=aligned_df["current_value"],
+            mode="lines+markers",
+            name="Período atual",
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=aligned_df["label"],
+            y=aligned_df["previous_value"],
+            mode="lines+markers",
+            name="Período anterior",
+            line=dict(color="red"),
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        margin=dict(l=10, r=10, t=50, b=10),
+        xaxis_title=None,
+        yaxis_title=None,
+        height=350,
+        legend_title_text=None,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -211,11 +433,40 @@ sales_df = load_collection_df(
     date_range=date_range,
 )
 
+previous_sales_df = pd.DataFrame()
+current_start, current_end = _normalize_date_range(date_range)
+
+if current_start is not None and current_end is not None:
+    previous_start, previous_end = _shift_date_range_back(current_start, current_end)
+    previous_sales_df = load_collection_df(
+        "sales",
+        account_id=account_filter,
+        allowed_account_ids=allowed_account_ids,
+        date_field="soldAt",
+        date_range=(previous_start, previous_end),
+    )
+else:
+    previous_start, previous_end = None, None
+
 if not sales_df.empty:
     if "soldAtParsed" in sales_df.columns:
-        sales_df = sales_df.sort_values("soldAtParsed", ascending=False, na_position="last")
+        sales_df = sales_df.sort_values(
+            "soldAtParsed", ascending=False, na_position="last"
+        )
     elif "soldAt" in sales_df.columns:
-        sales_df = sales_df.sort_values("soldAt", ascending=False, na_position="last")
+        sales_df = sales_df.sort_values(
+            "soldAt", ascending=False, na_position="last"
+        )
+
+if not previous_sales_df.empty:
+    if "soldAtParsed" in previous_sales_df.columns:
+        previous_sales_df = previous_sales_df.sort_values(
+            "soldAtParsed", ascending=False, na_position="last"
+        )
+    elif "soldAt" in previous_sales_df.columns:
+        previous_sales_df = previous_sales_df.sort_values(
+            "soldAt", ascending=False, na_position="last"
+        )
 
 valid_sales_df = (
     sales_df[sales_df["status"] != "CANCELED"]
@@ -240,12 +491,23 @@ render_kpis(
 left, right = st.columns([1.3, 1])
 
 with left:
-    series_df = (
-        time_series(sales_df, "soldAtParsed", "value")
-        if not sales_df.empty
-        else pd.DataFrame()
-    )
-    render_line_chart(series_df, "period", "value", "Valor de vendas por período")
+    if (
+        current_start is not None
+        and current_end is not None
+        and previous_start is not None
+        and previous_end is not None
+    ):
+        _render_sales_comparison_chart(
+            current_df=sales_df,
+            previous_df=previous_sales_df,
+            current_start=current_start,
+            current_end=current_end,
+            previous_start=previous_start,
+            previous_end=previous_end,
+            title="Valor de vendas por período",
+        )
+    else:
+        st.info("Seleciona um intervalo de datas válido para comparar com o período anterior.")
 
 with right:
     status_chart_df = _build_status_chart_df(sales_df)
@@ -394,7 +656,10 @@ else:
             st.metric("Status", sale_row.get("status") or "-")
         with summary_cols[2]:
             value = sale_row.get("value")
-            st.metric("Valor", format_currency(float(value)) if value is not None else "-")
+            st.metric(
+                "Valor",
+                format_currency(float(value)) if value is not None else "-",
+            )
         with summary_cols[3]:
             st.metric("SKU", sale_row.get("sku") or "-")
 
