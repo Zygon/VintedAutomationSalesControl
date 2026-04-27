@@ -3,7 +3,6 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
-import time
 
 import pandas as pd
 import plotly.express as px
@@ -85,10 +84,12 @@ WEEKDAY_LABELS_PT = {
     6: "Dom",
 }
 
-DETAIL_COLUMN_ID = "__view_detail__"
+DETAIL_ICON_COLUMN_ID = "__view_detail__"
 DETAIL_TRIGGER_COLUMN_ID = "__detail_trigger__"
-DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
-DETAIL_MODAL_NONCE_KEY = "sales_detail_modal_nonce"
+DETAIL_ICON = "👁"
+DETAIL_MODAL_SALE_ID_KEY = "sales_detail_modal_sale_id"
+DETAIL_LAST_TRIGGER_TOKEN_KEY = "sales_detail_last_trigger_token"
+
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -671,8 +672,7 @@ def _render_sale_detail_modal(
 
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
-        st.session_state[DETAIL_MODAL_STATE_KEY] = None
-        st.session_state[DETAIL_MODAL_NONCE_KEY] = None
+        st.session_state[DETAIL_MODAL_SALE_ID_KEY] = None
         st.rerun()
 
 
@@ -806,8 +806,8 @@ support_columns = [
 
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
-grid_df.insert(0, DETAIL_TRIGGER_COLUMN_ID, "")
-grid_df.insert(0, DETAIL_COLUMN_ID, "")
+grid_df.insert(0, DETAIL_ICON_COLUMN_ID, DETAIL_ICON)
+grid_df[DETAIL_TRIGGER_COLUMN_ID] = ""
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -823,18 +823,24 @@ detail_button_renderer = JsCode(
         init(params) {{
             this.params = params;
             this.eGui = document.createElement('button');
-            this.eGui.innerHTML = '{"👁"}';
+            this.eGui.innerText = '{DETAIL_ICON}';
             this.eGui.setAttribute('title', 'Ver detalhe');
             this.eGui.style.width = '100%';
-            this.eGui.style.height = '30px';
+            this.eGui.style.height = '100%';
             this.eGui.style.border = 'none';
             this.eGui.style.background = 'transparent';
             this.eGui.style.cursor = 'pointer';
             this.eGui.style.fontSize = '18px';
-            this.eGui.style.lineHeight = '1';
-            this.eGui.addEventListener('click', () => {{
-                const token = String(params.data.saleId || '') + '__' + String(Date.now());
-                params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', token);
+            this.eGui.style.padding = '0';
+            this.eGui.style.margin = '0';
+            this.eGui.addEventListener('click', (event) => {{
+                event.preventDefault();
+                event.stopPropagation();
+                const saleId = String((params.data && params.data.saleId) || '').trim();
+                if (!saleId) {{
+                    return;
+                }}
+                params.node.setDataValue('{DETAIL_TRIGGER_COLUMN_ID}', `${{saleId}}__${{Date.now()}}`);
             }});
         }}
         getGui() {{
@@ -845,7 +851,7 @@ detail_button_renderer = JsCode(
 )
 
 gb.configure_column(
-    DETAIL_COLUMN_ID,
+    DETAIL_ICON_COLUMN_ID,
     header_name="",
     editable=False,
     sortable=False,
@@ -862,9 +868,9 @@ gb.configure_column(
     },
 )
 
-gb.configure_column(DETAIL_TRIGGER_COLUMN_ID, hide=True)
 gb.configure_column("saleId", hide=True)
 gb.configure_column("matchedLabelId", hide=True)
+gb.configure_column(DETAIL_TRIGGER_COLUMN_ID, hide=True)
 
 if "status" in grid_df.columns:
     gb.configure_column(
@@ -881,8 +887,8 @@ gb.configure_grid_options(
     rowHeight=40,
     animateRows=False,
     suppressRowClickSelection=True,
-    rowSelection="single",
     suppressCellFocus=False,
+    rowSelection="single",
 )
 
 status_colors_js = json.dumps(STATUS_COLORS)
@@ -891,7 +897,7 @@ status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
 row_style_jscode = JsCode(
     f"""
     function(params) {{
-        const status = String((params.data && params.data.status) || '').toUpperCase();
+        const status = String((params.data && params.data.status) || "").toUpperCase();
         const bgColors = {status_colors_js};
         const textColors = {status_text_colors_js};
 
@@ -927,25 +933,45 @@ grid_response = AgGrid(
 )
 
 edited_df = pd.DataFrame(grid_response["data"])
-modal_sale_id = None
-modal_nonce = None
 
-if not edited_df.empty and DETAIL_TRIGGER_COLUMN_ID in edited_df.columns:
-    trigger_rows = edited_df[
-        edited_df[DETAIL_TRIGGER_COLUMN_ID].astype(str).str.contains("__", na=False)
+trigger_sale_id = None
+if (
+    not edited_df.empty
+    and DETAIL_TRIGGER_COLUMN_ID in edited_df.columns
+    and DETAIL_TRIGGER_COLUMN_ID in grid_df.columns
+):
+    original_triggers = grid_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
+    current_triggers = edited_df[["saleId", DETAIL_TRIGGER_COLUMN_ID]].copy()
+
+    original_triggers["saleId"] = original_triggers["saleId"].astype(str)
+    current_triggers["saleId"] = current_triggers["saleId"].astype(str)
+    original_triggers[DETAIL_TRIGGER_COLUMN_ID] = original_triggers[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
+    current_triggers[DETAIL_TRIGGER_COLUMN_ID] = current_triggers[DETAIL_TRIGGER_COLUMN_ID].fillna("").astype(str)
+
+    trigger_diff = original_triggers.merge(
+        current_triggers,
+        on="saleId",
+        suffixes=("_old", "_new"),
+    )
+
+    changed_triggers = trigger_diff[
+        (trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_old"] != trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_new"])
+        & (trigger_diff[f"{DETAIL_TRIGGER_COLUMN_ID}_new"].str.strip() != "")
     ]
 
-    if not trigger_rows.empty:
-        trigger_value = str(trigger_rows.iloc[0][DETAIL_TRIGGER_COLUMN_ID])
-        sale_id_part, _, nonce_part = trigger_value.partition("__")
-        if sale_id_part and nonce_part:
-            modal_sale_id = sale_id_part
-            modal_nonce = trigger_value
+    if not changed_triggers.empty:
+        latest_trigger = changed_triggers.iloc[-1][f"{DETAIL_TRIGGER_COLUMN_ID}_new"]
+        last_trigger_token = str(st.session_state.get(DETAIL_LAST_TRIGGER_TOKEN_KEY) or "")
+
+        if str(latest_trigger) != last_trigger_token:
+            trigger_sale_id = str(latest_trigger).split("__", 1)[0].strip()
+            st.session_state[DETAIL_LAST_TRIGGER_TOKEN_KEY] = str(latest_trigger)
+            st.session_state[DETAIL_MODAL_SALE_ID_KEY] = trigger_sale_id
 
 if not edited_df.empty:
-    for helper_col in [DETAIL_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID]:
-        if helper_col in edited_df.columns:
-            edited_df = edited_df.drop(columns=[helper_col])
+    drop_cols = [c for c in [DETAIL_ICON_COLUMN_ID, DETAIL_TRIGGER_COLUMN_ID] if c in edited_df.columns]
+    if drop_cols:
+        edited_df = edited_df.drop(columns=drop_cols)
 
 save_col, info_col = st.columns([1, 3])
 
@@ -966,14 +992,10 @@ with info_col:
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-if modal_nonce and modal_nonce != st.session_state.get(DETAIL_MODAL_NONCE_KEY):
-    st.session_state[DETAIL_MODAL_STATE_KEY] = modal_sale_id
-    st.session_state[DETAIL_MODAL_NONCE_KEY] = modal_nonce
-
-current_modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
-if current_modal_sale_id:
+modal_sale_id = str(st.session_state.get(DETAIL_MODAL_SALE_ID_KEY) or "").strip()
+if modal_sale_id:
     _render_sale_detail_modal(
-        sale_id=str(current_modal_sale_id),
+        sale_id=modal_sale_id,
         sales_df=sales_df,
         account_filter=account_filter,
         allowed_account_ids=allowed_account_ids,
