@@ -91,11 +91,14 @@ AMOUNT_COLUMN_CANDIDATES = [
     "value",
     "total",
     "cost",
+    "price",
     "expenseValue",
     "expenseAmount",
     "allocatedValue",
     "netAmount",
     "grossAmount",
+    "net",
+    "gross",
 ]
 
 CATEGORY_COLUMN_CANDIDATES = [
@@ -212,12 +215,45 @@ def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
     return pd.Series(dtype="datetime64[ns]")
 
 
+
+
+def _coerce_numeric_series(series: pd.Series) -> pd.Series:
+    if series.empty:
+        return pd.Series(dtype="float64")
+
+    if pd.api.types.is_numeric_dtype(series):
+        return pd.to_numeric(series, errors="coerce")
+
+    cleaned = (
+        series.astype(str)
+        .str.strip()
+        .str.replace(r"[\s\u00A0]", "", regex=True)
+        .str.replace(r"[€$£]", "", regex=True)
+        .str.replace(r"[^0-9,.-]", "", regex=True)
+    )
+
+    both_mask = cleaned.str.contains(",", regex=False) & cleaned.str.contains(".", regex=False)
+    cleaned.loc[both_mask] = cleaned.loc[both_mask].str.replace(".", "", regex=False).str.replace(",", ".", regex=False)
+
+    comma_only_mask = cleaned.str.contains(",", regex=False) & ~cleaned.str.contains(".", regex=False)
+    cleaned.loc[comma_only_mask] = cleaned.loc[comma_only_mask].str.replace(",", ".", regex=False)
+
+    cleaned = cleaned.replace({"": None, "-": None, ".": None, ",": None, "--": None})
+    return pd.to_numeric(cleaned, errors="coerce")
+
+
 def _pick_amount_column(df: pd.DataFrame) -> str | None:
     for col in AMOUNT_COLUMN_CANDIDATES:
         if col in df.columns:
-            series = pd.to_numeric(df[col], errors="coerce")
+            series = _coerce_numeric_series(df[col])
             if series.notna().any():
                 return col
+
+    for col in df.columns:
+        series = _coerce_numeric_series(df[col])
+        if series.notna().any() and series.abs().sum() > 0:
+            return col
+
     return None
 
 
@@ -227,7 +263,7 @@ def _get_numeric_value_series(df: pd.DataFrame) -> pd.Series:
 
     amount_col = _pick_amount_column(df)
     if amount_col:
-        return pd.to_numeric(df[amount_col], errors="coerce").fillna(0)
+        return _coerce_numeric_series(df[amount_col]).fillna(0)
 
     return pd.Series([0.0] * len(df), index=df.index, dtype="float64")
 
@@ -638,7 +674,7 @@ if not previous_expenses_df.empty:
         previous_expenses_df = previous_expenses_df.sort_values(prev_sort_col, ascending=False, na_position="last")
 
 amount_col = _pick_amount_column(expenses_df)
-current_total = float(pd.to_numeric(expenses_df[amount_col], errors="coerce").fillna(0).sum()) if amount_col else 0.0
+current_total = float(_coerce_numeric_series(expenses_df[amount_col]).fillna(0).sum()) if amount_col else 0.0
 current_count = int(safe_count(expenses_df))
 average_value = (current_total / current_count) if current_count > 0 else 0.0
 
@@ -672,7 +708,7 @@ with left:
         if expenses_df.empty or series.empty or amount_col is None:
             st.info("Sem dados para apresentar.")
         else:
-            series_df = pd.DataFrame({"period": series, "value": pd.to_numeric(expenses_df[amount_col], errors="coerce").fillna(0)})
+            series_df = pd.DataFrame({"period": series, "value": _coerce_numeric_series(expenses_df[amount_col]).fillna(0)})
             series_df = series_df.dropna(subset=["period"]).groupby("period", as_index=False)["value"].sum()
             if series_df.empty:
                 st.info("Sem dados para apresentar.")
