@@ -52,7 +52,7 @@ STATUS_COLORS = {
     "PACKAGING": "#fff3cd",
     "SHIPPED": "#cfe2ff",
     "COMPLETED": "#d1e7dd",
-    "CANCELED": "#e2e5e5",
+    "CANCELED": "#e2e3e5",
 }
 
 STATUS_TEXT_COLORS = {
@@ -264,23 +264,30 @@ def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
     return pd.Series(dtype="datetime64[ns]")
 
 
+def _get_numeric_value_series(df: pd.DataFrame) -> pd.Series:
+    if df.empty:
+        return pd.Series(dtype="float64")
+
+    if "value" in df.columns:
+        return pd.to_numeric(df["value"], errors="coerce").fillna(0)
+
+    return pd.Series([0] * len(df), index=df.index, dtype="float64")
+
+
 def _infer_bucket_config(start: pd.Timestamp, end: pd.Timestamp):
     total_seconds = max((end - start).total_seconds(), 1)
+    total_days = total_seconds / 86400
 
-    if total_seconds <= 36 * 3600:
+    # Só faz sentido hora para 1 único dia.
+    if total_days <= 1.01:
         return {
             "bucket": "hour",
             "label_format": "%H:%M",
         }
 
-    if total_seconds <= 62 * 24 * 3600:
-        return {
-            "bucket": "day",
-            "label_format": "%d/%m",
-        }
-
+    # Semana e mês devem comparar por dia, não por hora.
     return {
-        "bucket": "week",
+        "bucket": "day",
         "label_format": "%d/%m",
     }
 
@@ -292,7 +299,7 @@ def _week_start(series: pd.Series) -> pd.Series:
 
 def _truncate_to_hour(series: pd.Series) -> pd.Series:
     series = pd.to_datetime(series, errors="coerce")
-    return series.dt.strftime("%Y-%m-%d %H:00:00").pipe(pd.to_datetime, errors="coerce")
+    return pd.to_datetime(series.dt.strftime("%Y-%m-%d %H:00:00"), errors="coerce")
 
 
 def _make_bucket_start(series: pd.Series, bucket: str) -> pd.Series:
@@ -384,8 +391,8 @@ def _build_aligned_period_series(
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["value"] = pd.to_numeric(current_work.get("value", 0), errors="coerce").fillna(0)
-    previous_work["value"] = pd.to_numeric(previous_work.get("value", 0), errors="coerce").fillna(0)
+    current_work["value"] = _get_numeric_value_series(current_work)
+    previous_work["value"] = _get_numeric_value_series(previous_work)
 
     current_index = _make_period_index(current_start, current_end, bucket)
     previous_index = _make_period_index(previous_start, previous_end, bucket)
