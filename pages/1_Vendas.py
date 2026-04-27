@@ -62,6 +62,16 @@ STATUS_TEXT_COLORS = {
     "CANCELED": "#41464b",
 }
 
+WEEKDAY_LABELS_PT = {
+    0: "Seg",
+    1: "Ter",
+    2: "Qua",
+    3: "Qui",
+    4: "Sex",
+    5: "Sáb",
+    6: "Dom",
+}
+
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
@@ -290,59 +300,14 @@ def _get_numeric_value_series(df: pd.DataFrame) -> pd.Series:
     return pd.Series([0.0] * len(df), index=df.index, dtype="float64")
 
 
-def _chart_bucket_for_mode(period_mode: str) -> str:
-    if period_mode == "Dia":
-        return "hour"
-
-    return "day"
-
-
-def _truncate_to_hour(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series.dt.strftime("%Y-%m-%d %H:00:00"), errors="coerce")
-
-
-def _bucket_start_series(series: pd.Series, bucket: str) -> pd.Series:
-    if bucket == "hour":
-        return _truncate_to_hour(series)
-
-    return series.dt.normalize()
-
-
-def _bucket_start_single(ts: pd.Timestamp, bucket: str) -> pd.Timestamp:
-    if bucket == "hour":
-        return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day, hour=ts.hour)
-
-    return pd.Timestamp(year=ts.year, month=ts.month, day=ts.day)
-
-
-def _period_index(start: pd.Timestamp, end: pd.Timestamp, bucket: str) -> pd.DatetimeIndex:
-    start_bucket = _bucket_start_single(start, bucket)
-    end_bucket = _bucket_start_single(end, bucket)
-
-    if bucket == "hour":
-        return pd.date_range(start=start_bucket, end=end_bucket, freq="1h")
-
-    return pd.date_range(start=start_bucket, end=end_bucket, freq="1D")
-
-
-def _labels_from_index(index: pd.DatetimeIndex, bucket: str) -> list[str]:
-    if bucket == "hour":
-        return [ts.strftime("%H:%M") for ts in index]
-
-    return [ts.strftime("%d/%m") for ts in index]
-
-
-def _build_aligned_period_series(
+def _build_comparison_df_day(
     current_df: pd.DataFrame,
     previous_df: pd.DataFrame,
     current_start: pd.Timestamp,
     current_end: pd.Timestamp,
     previous_start: pd.Timestamp,
     previous_end: pd.Timestamp,
-    period_mode: str,
 ) -> pd.DataFrame:
-    bucket = _chart_bucket_for_mode(period_mode)
-
     current_work = current_df.copy()
     previous_work = previous_df.copy()
 
@@ -355,55 +320,213 @@ def _build_aligned_period_series(
     current_work["value"] = _get_numeric_value_series(current_work)
     previous_work["value"] = _get_numeric_value_series(previous_work)
 
-    current_work["_bucket_start"] = _bucket_start_series(current_work["_dt"], bucket)
-    previous_work["_bucket_start"] = _bucket_start_series(previous_work["_dt"], bucket)
+    current_work["_hour"] = current_work["_dt"].dt.hour
+    previous_work["_hour"] = previous_work["_dt"].dt.hour
 
-    current_index = _period_index(current_start, current_end, bucket)
-    previous_index = _period_index(previous_start, previous_end, bucket)
+    current_series = current_work.groupby("_hour")["value"].sum()
+    previous_series = previous_work.groupby("_hour")["value"].sum()
 
-    if len(current_index) == 0:
-        current_index = pd.DatetimeIndex([_bucket_start_single(current_start, bucket)])
-
-    if len(previous_index) == 0:
-        previous_index = pd.DatetimeIndex([_bucket_start_single(previous_start, bucket)])
-
-    current_series = (
-        current_work.groupby("_bucket_start", dropna=True)["value"]
-        .sum()
-        .reindex(current_index, fill_value=0)
-    )
-
-    previous_series = (
-        previous_work.groupby("_bucket_start", dropna=True)["value"]
-        .sum()
-        .reindex(previous_index, fill_value=0)
-    )
-
-    slot_count = max(len(current_series), len(previous_series))
-
-    current_values = list(current_series.values)
-    previous_values = list(previous_series.values)
-
-    if len(current_values) < slot_count:
-        current_values.extend([0] * (slot_count - len(current_values)))
-
-    if len(previous_values) < slot_count:
-        previous_values.extend([0] * (slot_count - len(previous_values)))
-
-    if len(current_index) < slot_count:
-        last = current_index[-1] if len(current_index) > 0 else _bucket_start_single(current_start, bucket)
-        step = pd.Timedelta(hours=1) if bucket == "hour" else pd.Timedelta(days=1)
-        extra = [last + step * (i + 1) for i in range(slot_count - len(current_index))]
-        current_index = current_index.append(pd.DatetimeIndex(extra))
-
-    labels = _labels_from_index(current_index[:slot_count], bucket)
+    hours = list(range(24))
+    labels = [f"{hour:02d}:00" for hour in hours]
 
     return pd.DataFrame(
         {
             "label": labels,
-            "current_value": current_values[:slot_count],
-            "previous_value": previous_values[:slot_count],
+            "current_value": [float(current_series.get(hour, 0)) for hour in hours],
+            "previous_value": [float(previous_series.get(hour, 0)) for hour in hours],
         }
+    )
+
+
+def _build_comparison_df_week(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+) -> pd.DataFrame:
+    current_work = current_df.copy()
+    previous_work = previous_df.copy()
+
+    current_work["_dt"] = _get_datetime_series(current_work)
+    previous_work["_dt"] = _get_datetime_series(previous_work)
+
+    current_work = current_work.dropna(subset=["_dt"])
+    previous_work = previous_work.dropna(subset=["_dt"])
+
+    current_work["value"] = _get_numeric_value_series(current_work)
+    previous_work["value"] = _get_numeric_value_series(previous_work)
+
+    current_work["_weekday"] = current_work["_dt"].dt.weekday
+    previous_work["_weekday"] = previous_work["_dt"].dt.weekday
+
+    current_series = current_work.groupby("_weekday")["value"].sum()
+    previous_series = previous_work.groupby("_weekday")["value"].sum()
+
+    start_weekday = current_start.weekday()
+    end_weekday = current_end.weekday()
+    weekdays = list(range(start_weekday, end_weekday + 1))
+
+    labels = [WEEKDAY_LABELS_PT[d] for d in weekdays]
+
+    return pd.DataFrame(
+        {
+            "label": labels,
+            "current_value": [float(current_series.get(day, 0)) for day in weekdays],
+            "previous_value": [float(previous_series.get(day, 0)) for day in weekdays],
+        }
+    )
+
+
+def _build_comparison_df_month(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+) -> pd.DataFrame:
+    current_work = current_df.copy()
+    previous_work = previous_df.copy()
+
+    current_work["_dt"] = _get_datetime_series(current_work)
+    previous_work["_dt"] = _get_datetime_series(previous_work)
+
+    current_work = current_work.dropna(subset=["_dt"])
+    previous_work = previous_work.dropna(subset=["_dt"])
+
+    current_work["value"] = _get_numeric_value_series(current_work)
+    previous_work["value"] = _get_numeric_value_series(previous_work)
+
+    current_work["_day"] = current_work["_dt"].dt.day
+    previous_work["_day"] = previous_work["_dt"].dt.day
+
+    current_series = current_work.groupby("_day")["value"].sum()
+    previous_series = previous_work.groupby("_day")["value"].sum()
+
+    days = list(range(1, current_end.day + 1))
+    labels = [str(day) for day in days]
+
+    return pd.DataFrame(
+        {
+            "label": labels,
+            "current_value": [float(current_series.get(day, 0)) for day in days],
+            "previous_value": [float(previous_series.get(day, 0)) for day in days],
+        }
+    )
+
+
+def _build_comparison_df_fallback(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+) -> pd.DataFrame:
+    current_work = current_df.copy()
+    previous_work = previous_df.copy()
+
+    current_work["_dt"] = _get_datetime_series(current_work)
+    previous_work["_dt"] = _get_datetime_series(previous_work)
+
+    current_work = current_work.dropna(subset=["_dt"])
+    previous_work = previous_work.dropna(subset=["_dt"])
+
+    current_work["value"] = _get_numeric_value_series(current_work)
+    previous_work["value"] = _get_numeric_value_series(previous_work)
+
+    current_work["_day"] = current_work["_dt"].dt.normalize()
+    previous_work["_day"] = previous_work["_dt"].dt.normalize()
+
+    current_series = current_work.groupby("_day")["value"].sum()
+    previous_series = previous_work.groupby("_day")["value"].sum()
+
+    current_days = pd.date_range(
+        start=pd.Timestamp(year=current_start.year, month=current_start.month, day=current_start.day),
+        end=pd.Timestamp(year=current_end.year, month=current_end.month, day=current_end.day),
+        freq="1D",
+    )
+    previous_days = pd.date_range(
+        start=pd.Timestamp(year=previous_start.year, month=previous_start.month, day=previous_start.day),
+        end=pd.Timestamp(year=previous_end.year, month=previous_end.month, day=previous_end.day),
+        freq="1D",
+    )
+
+    slot_count = max(len(current_days), len(previous_days))
+    labels = []
+    current_values = []
+    previous_values = []
+
+    for i in range(slot_count):
+        if i < len(current_days):
+            labels.append(current_days[i].strftime("%d/%m"))
+            current_values.append(float(current_series.get(current_days[i], 0)))
+        else:
+            labels.append(str(i + 1))
+            current_values.append(0.0)
+
+        if i < len(previous_days):
+            previous_values.append(float(previous_series.get(previous_days[i], 0)))
+        else:
+            previous_values.append(0.0)
+
+    return pd.DataFrame(
+        {
+            "label": labels,
+            "current_value": current_values,
+            "previous_value": previous_values,
+        }
+    )
+
+
+def _build_comparison_df(
+    current_df: pd.DataFrame,
+    previous_df: pd.DataFrame,
+    current_start: pd.Timestamp,
+    current_end: pd.Timestamp,
+    previous_start: pd.Timestamp,
+    previous_end: pd.Timestamp,
+    period_mode: str,
+) -> pd.DataFrame:
+    if period_mode == "Dia":
+        return _build_comparison_df_day(
+            current_df=current_df,
+            previous_df=previous_df,
+            current_start=current_start,
+            current_end=current_end,
+            previous_start=previous_start,
+            previous_end=previous_end,
+        )
+
+    if period_mode == "Semana":
+        return _build_comparison_df_week(
+            current_df=current_df,
+            previous_df=previous_df,
+            current_start=current_start,
+            current_end=current_end,
+            previous_start=previous_start,
+            previous_end=previous_end,
+        )
+
+    if period_mode == "Mês":
+        return _build_comparison_df_month(
+            current_df=current_df,
+            previous_df=previous_df,
+            current_start=current_start,
+            current_end=current_end,
+            previous_start=previous_start,
+            previous_end=previous_end,
+        )
+
+    return _build_comparison_df_fallback(
+        current_df=current_df,
+        previous_df=previous_df,
+        current_start=current_start,
+        current_end=current_end,
+        previous_start=previous_start,
+        previous_end=previous_end,
     )
 
 
@@ -417,7 +540,7 @@ def _render_sales_comparison_chart(
     period_mode: str,
     title: str,
 ) -> None:
-    aligned_df = _build_aligned_period_series(
+    aligned_df = _build_comparison_df(
         current_df=current_df,
         previous_df=previous_df,
         current_start=current_start,
