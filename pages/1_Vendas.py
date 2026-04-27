@@ -3,6 +3,7 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
+from urllib.parse import urlencode
 
 import pandas as pd
 import plotly.express as px
@@ -60,18 +61,18 @@ STATUS_COLORS = {
     "IN_PRODUCTION": "#f8d7da",
     "PRINT_DISPATCHED": "#fff3cd",
     "PACKAGING": "#fff3cd",
+    "WAITING_FOR_PICKUP": "#ffe5b4",
     "SHIPPED": "#cfe2ff",
     "COMPLETED": "#d1e7dd",
     "CANCELED": "#e2e3e5",
-    "WAITING_FOR_PICKUP": "#ffe5b4"
 }
 
 STATUS_TEXT_COLORS = {
     "PRINT_DISPATCHED": "#856404",
     "PACKAGING": "#856404",
     "IN_PRODUCTION": "#856404",
+    "WAITING_FOR_PICKUP": "#8a5a00",
     "CANCELED": "#41464b",
-    "WAITING_FOR_PICKUP": "#8a5a00"
 }
 
 WEEKDAY_LABELS_PT = {
@@ -86,32 +87,7 @@ WEEKDAY_LABELS_PT = {
 
 DETAIL_COLUMN_ID = "__view_detail__"
 DETAIL_ICON = "👁"
-DETAIL_MODAL_STATE_KEY = "sales_detail_modal_sale_id"
-DETAIL_LAST_OPENED_KEY = "sales_detail_last_opened_sale_id"
-DETAIL_QUERY_PARAM_KEY = "sale_detail"
-
-
-def _open_sale_detail_via_query_params() -> str | None:
-    sale_id = st.query_params.get(DETAIL_QUERY_PARAM_KEY)
-    if sale_id is None:
-        return None
-
-    if isinstance(sale_id, list):
-        sale_id = sale_id[0] if sale_id else None
-
-    sale_id = str(sale_id).strip() if sale_id is not None else None
-    return sale_id or None
-
-
-def _clear_sale_detail_query_param() -> None:
-    try:
-        del st.query_params[DETAIL_QUERY_PARAM_KEY]
-    except Exception:
-        params = dict(st.query_params)
-        params.pop(DETAIL_QUERY_PARAM_KEY, None)
-        st.query_params.clear()
-        for key, value in params.items():
-            st.query_params[key] = value
+DETAIL_QUERY_PARAM = "sale_detail"
 
 
 def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
@@ -628,6 +604,23 @@ def _render_sales_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
+def _get_query_params() -> dict:
+    try:
+        return dict(st.query_params)
+    except Exception:
+        return st.experimental_get_query_params()
+
+
+def _set_query_params(params: dict) -> None:
+    clean_params = {k: v for k, v in params.items() if v not in (None, "", [], ())}
+    try:
+        st.query_params.clear()
+        for key, value in clean_params.items():
+            st.query_params[key] = value
+    except Exception:
+        st.experimental_set_query_params(**clean_params)
+
+
 @st.dialog("Detalhe da venda", width="large")
 def _render_sale_detail_modal(
     sale_id: str,
@@ -694,9 +687,9 @@ def _render_sale_detail_modal(
 
     st.divider()
     if st.button("Fechar", key=f"close_sale_detail_modal_{sale_id}"):
-        st.session_state[DETAIL_MODAL_STATE_KEY] = None
-        st.session_state[DETAIL_LAST_OPENED_KEY] = None
-        _clear_sale_detail_query_param()
+        params = _get_query_params()
+        params.pop(DETAIL_QUERY_PARAM, None)
+        _set_query_params(params)
         st.rerun()
 
 
@@ -830,7 +823,16 @@ support_columns = [
 
 table_df = sales_df[support_columns + visible_columns].copy()
 grid_df = _sanitize_for_aggrid(table_df)
-grid_df.insert(0, DETAIL_COLUMN_ID, DETAIL_ICON)
+
+query_params = _get_query_params()
+base_params = {k: v for k, v in query_params.items() if k != DETAIL_QUERY_PARAM}
+
+def _build_detail_href(sale_id: str) -> str:
+    params = dict(base_params)
+    params[DETAIL_QUERY_PARAM] = str(sale_id)
+    return f"?{urlencode(params, doseq=True)}"
+
+grid_df.insert(0, DETAIL_COLUMN_ID, grid_df["saleId"].astype(str).map(_build_detail_href))
 
 gb = GridOptionsBuilder.from_dataframe(grid_df)
 
@@ -840,32 +842,30 @@ gb.configure_default_column(
     filter=True,
 )
 
-detail_cell_renderer = JsCode(
-    """
-    class DetailCellRenderer {
-        init(params) {
-            this.eGui = document.createElement('div');
-            this.eGui.style.display = 'flex';
-            this.eGui.style.justifyContent = 'center';
+link_renderer = JsCode(
+    f"""
+    class DetailLinkRenderer {{
+        init(params) {{
+            this.eGui = document.createElement('a');
+            this.eGui.setAttribute('href', params.value || '#');
+            this.eGui.setAttribute('title', 'Ver detalhe');
+            this.eGui.style.display = 'inline-flex';
             this.eGui.style.alignItems = 'center';
+            this.eGui.style.justifyContent = 'center';
+            this.eGui.style.width = '100%';
             this.eGui.style.height = '100%';
-
-            const saleId = params.data && params.data.saleId ? String(params.data.saleId) : '';
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('sale_detail', saleId);
-
-            this.eGui.innerHTML = `
-                <a href="${currentUrl.toString()}"
-                   target="_self"
-                   title="Ver detalhe"
-                   style="text-decoration:none;font-size:18px;line-height:1;cursor:pointer;">👁</a>
-            `;
-        }
-
-        getGui() {
+            this.eGui.style.textDecoration = 'none';
+            this.eGui.style.fontSize = '18px';
+            this.eGui.style.cursor = 'pointer';
+            this.eGui.innerText = '{DETAIL_ICON}';
+            this.eGui.addEventListener('click', function(event) {{
+                event.stopPropagation();
+            }});
+        }}
+        getGui() {{
             return this.eGui;
-        }
-    }
+        }}
+    }}
     """
 )
 
@@ -879,10 +879,11 @@ gb.configure_column(
     pinned="left",
     lockPosition=True,
     suppressMenu=True,
-    cellRenderer=detail_cell_renderer,
+    cellRenderer=link_renderer,
     cellStyle={
         "textAlign": "center",
-        "fontSize": "18px",
+        "paddingLeft": "0px",
+        "paddingRight": "0px",
     },
 )
 
@@ -900,15 +901,12 @@ if "status" in grid_df.columns:
 if "value" in grid_df.columns:
     gb.configure_column("value", type=["numericColumn"])
 
-gb.configure_selection(
-    selection_mode="single",
-    use_checkbox=False,
-)
-
 gb.configure_grid_options(
     rowHeight=40,
     animateRows=False,
+    suppressRowClickSelection=True,
     suppressCellFocus=False,
+    rowSelection="single",
 )
 
 status_colors_js = json.dumps(STATUS_COLORS)
@@ -917,7 +915,7 @@ status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
 row_style_jscode = JsCode(
     f"""
     function(params) {{
-        const status = String((params.data && params.data.status) || "").toUpperCase();
+        const status = String((params.data && params.data.status) || '').toUpperCase();
         const bgColors = {status_colors_js};
         const textColors = {status_text_colors_js};
 
@@ -943,7 +941,7 @@ grid_options = gb.build()
 grid_response = AgGrid(
     grid_df,
     gridOptions=grid_options,
-    update_mode=GridUpdateMode.SELECTION_CHANGED | GridUpdateMode.VALUE_CHANGED,
+    update_mode=GridUpdateMode.VALUE_CHANGED,
     allow_unsafe_jscode=True,
     fit_columns_on_grid_load=False,
     use_container_width=True,
@@ -971,26 +969,14 @@ with save_col:
 with info_col:
     st.caption(
         "Cores: vermelho = WAITING_LABEL / READY_TO_PRINT / IN_PRODUCTION | "
-        "amarelo = PRINT_DISPATCHED / PACKAGING | "
+        "amarelo = PRINT_DISPATCHED / PACKAGING / WAITING_FOR_PICKUP | "
         "azul = SHIPPED | verde = COMPLETED | cinzento = CANCELED"
     )
 
-selected_rows = grid_response.get("selected_rows", [])
-selected_sale_id = None
-
-if isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty:
-    selected_sale_id = str(selected_rows.iloc[0].get("saleId"))
-elif isinstance(selected_rows, list) and len(selected_rows) > 0:
-    selected_sale_id = str(selected_rows[0].get("saleId"))
-
-if selected_sale_id and selected_sale_id != st.session_state.get(DETAIL_LAST_OPENED_KEY):
-    st.session_state[DETAIL_MODAL_STATE_KEY] = selected_sale_id
-    st.session_state[DETAIL_LAST_OPENED_KEY] = selected_sale_id
-
-modal_sale_id = st.session_state.get(DETAIL_MODAL_STATE_KEY)
+modal_sale_id = str(query_params.get(DETAIL_QUERY_PARAM, "") or "").strip()
 if modal_sale_id:
     _render_sale_detail_modal(
-        sale_id=str(modal_sale_id),
+        sale_id=modal_sale_id,
         sales_df=sales_df,
         account_filter=account_filter,
         allowed_account_ids=allowed_account_ids,
