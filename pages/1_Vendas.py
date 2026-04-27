@@ -5,11 +5,12 @@ apply_page_layout()
 import json
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
 from components.auth_guard import render_user_box, require_login
-from components.charts import render_bar_chart, render_line_chart
+from components.charts import render_line_chart
 from components.filters import get_active_filters, render_global_filters
 from components.tables import render_dataframe, render_kpis
 from services.firestore_queries import (
@@ -165,6 +166,31 @@ def _build_status_chart_df(sales_df: pd.DataFrame) -> pd.DataFrame:
     return work
 
 
+def _render_status_bar_chart(df: pd.DataFrame, title: str) -> None:
+    if df.empty or "status" not in df.columns or "count" not in df.columns:
+        st.info("Sem dados para apresentar.")
+        return
+
+    fig = px.bar(
+        df,
+        x="status",
+        y="count",
+        title=title,
+        color="status",
+        color_discrete_map=STATUS_COLORS,
+    )
+
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=50, b=10),
+        xaxis_title=None,
+        yaxis_title=None,
+        height=350,
+        showlegend=False,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -223,13 +249,7 @@ with left:
 
 with right:
     status_chart_df = _build_status_chart_df(sales_df)
-    render_bar_chart(
-        status_chart_df,
-        "status",
-        "count",
-        "Estados das vendas",
-        color_column="color",
-    )
+    _render_status_bar_chart(status_chart_df, "Estados das vendas")
 
 st.subheader("Tabela de vendas")
 
