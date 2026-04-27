@@ -17,7 +17,7 @@ from components.auth_guard import render_user_box, require_login
 from components.filters import get_active_filters, render_global_filters
 from components.tables import render_kpis
 from services.firestore_queries import load_collection_df
-from services.metrics import format_currency, safe_count, safe_sum, time_series
+from services.metrics import format_currency, safe_count, safe_sum
 
 CATEGORY_COLORS = {
     "SHIPPING": "#cfe2ff",
@@ -71,6 +71,38 @@ CATEGORY_OPTIONS = [
     "SUBSCRIPTION",
     "TAX",
     "OTHER",
+]
+
+DATE_COLUMN_CANDIDATES = [
+    "expenseDateParsed",
+    "expenseDate",
+    "incurredAtParsed",
+    "incurredAt",
+    "createdAtParsed",
+    "createdAt",
+    "updatedAtParsed",
+    "updatedAt",
+    "dateParsed",
+    "date",
+]
+
+AMOUNT_COLUMN_CANDIDATES = [
+    "amount",
+    "value",
+    "total",
+    "cost",
+    "expenseValue",
+    "expenseAmount",
+    "allocatedValue",
+    "netAmount",
+    "grossAmount",
+]
+
+CATEGORY_COLUMN_CANDIDATES = [
+    "category",
+    "expenseCategory",
+    "type",
+    "expenseType",
 ]
 
 
@@ -136,13 +168,6 @@ def _end_of_month(ts: pd.Timestamp) -> pd.Timestamp:
     return pd.Timestamp(next_month) - pd.Timedelta(microseconds=1)
 
 
-def _range_dict(start: pd.Timestamp, end: pd.Timestamp) -> dict:
-    return {
-        "start": start.tz_localize("UTC").to_pydatetime(),
-        "end": end.tz_localize("UTC").to_pydatetime(),
-    }
-
-
 def _previous_range_for_mode(current_start: pd.Timestamp, current_end: pd.Timestamp, period_mode: str):
     if period_mode == "Dia":
         return current_start - pd.Timedelta(days=1), current_end - pd.Timedelta(days=1)
@@ -176,10 +201,7 @@ def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
     if df.empty:
         return pd.Series(dtype="datetime64[ns]")
 
-    col = _pick_first_existing_column(
-        df,
-        ["expenseDateParsed", "expenseDate", "incurredAtParsed", "incurredAt", "createdAtParsed", "createdAt"],
-    )
+    col = _pick_first_existing_column(df, DATE_COLUMN_CANDIDATES)
     if not col:
         return pd.Series(dtype="datetime64[ns]")
 
@@ -190,15 +212,43 @@ def _get_datetime_series(df: pd.DataFrame) -> pd.Series:
     return pd.Series(dtype="datetime64[ns]")
 
 
+def _pick_amount_column(df: pd.DataFrame) -> str | None:
+    for col in AMOUNT_COLUMN_CANDIDATES:
+        if col in df.columns:
+            series = pd.to_numeric(df[col], errors="coerce")
+            if series.notna().any():
+                return col
+    return None
+
+
 def _get_numeric_value_series(df: pd.DataFrame) -> pd.Series:
     if df.empty:
         return pd.Series(dtype="float64")
 
-    for col in ["amount", "value", "total", "cost"]:
-        if col in df.columns:
-            return pd.to_numeric(df[col], errors="coerce").fillna(0)
+    amount_col = _pick_amount_column(df)
+    if amount_col:
+        return pd.to_numeric(df[amount_col], errors="coerce").fillna(0)
 
     return pd.Series([0.0] * len(df), index=df.index, dtype="float64")
+
+
+def _pick_category_column(df: pd.DataFrame) -> str | None:
+    return _pick_first_existing_column(df, CATEGORY_COLUMN_CANDIDATES)
+
+
+def _filter_df_by_date_range(df: pd.DataFrame, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.DataFrame:
+    if df.empty or start is None or end is None:
+        return df.copy()
+
+    series = _get_datetime_series(df)
+    if series.empty:
+        return df.copy()
+
+    work = df.copy()
+    work["__filter_dt__"] = series
+    work = work[work["__filter_dt__"].notna()]
+    work = work[(work["__filter_dt__"] >= start) & (work["__filter_dt__"] <= end)]
+    return work.drop(columns=["__filter_dt__"], errors="ignore")
 
 
 def _build_comparison_df_day(current_df: pd.DataFrame, previous_df: pd.DataFrame) -> pd.DataFrame:
@@ -210,11 +260,11 @@ def _build_comparison_df_day(current_df: pd.DataFrame, previous_df: pd.DataFrame
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["amount"] = _get_numeric_value_series(current_work)
-    previous_work["amount"] = _get_numeric_value_series(previous_work)
+    current_work["_amount"] = _get_numeric_value_series(current_work)
+    previous_work["_amount"] = _get_numeric_value_series(previous_work)
 
-    current_series = current_work.groupby(current_work["_dt"].dt.hour)["amount"].sum()
-    previous_series = previous_work.groupby(previous_work["_dt"].dt.hour)["amount"].sum()
+    current_series = current_work.groupby(current_work["_dt"].dt.hour)["_amount"].sum()
+    previous_series = previous_work.groupby(previous_work["_dt"].dt.hour)["_amount"].sum()
 
     hours = list(range(24))
     return pd.DataFrame(
@@ -242,11 +292,11 @@ def _build_comparison_df_week(
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["amount"] = _get_numeric_value_series(current_work)
-    previous_work["amount"] = _get_numeric_value_series(previous_work)
+    current_work["_amount"] = _get_numeric_value_series(current_work)
+    previous_work["_amount"] = _get_numeric_value_series(previous_work)
 
-    current_series = current_work.groupby(current_work["_dt"].dt.weekday)["amount"].sum()
-    previous_series = previous_work.groupby(previous_work["_dt"].dt.weekday)["amount"].sum()
+    current_series = current_work.groupby(current_work["_dt"].dt.weekday)["_amount"].sum()
+    previous_series = previous_work.groupby(previous_work["_dt"].dt.weekday)["_amount"].sum()
 
     weekdays = list(range(current_start.weekday(), current_end.weekday() + 1))
     return pd.DataFrame(
@@ -267,11 +317,11 @@ def _build_comparison_df_month(current_df: pd.DataFrame, previous_df: pd.DataFra
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["amount"] = _get_numeric_value_series(current_work)
-    previous_work["amount"] = _get_numeric_value_series(previous_work)
+    current_work["_amount"] = _get_numeric_value_series(current_work)
+    previous_work["_amount"] = _get_numeric_value_series(previous_work)
 
-    current_series = current_work.groupby(current_work["_dt"].dt.day)["amount"].sum()
-    previous_series = previous_work.groupby(previous_work["_dt"].dt.day)["amount"].sum()
+    current_series = current_work.groupby(current_work["_dt"].dt.day)["_amount"].sum()
+    previous_series = previous_work.groupby(previous_work["_dt"].dt.day)["_amount"].sum()
 
     days = list(range(1, current_end.day + 1))
     return pd.DataFrame(
@@ -305,21 +355,21 @@ def _build_comparison_df(
     current_work = current_work.dropna(subset=["_dt"])
     previous_work = previous_work.dropna(subset=["_dt"])
 
-    current_work["amount"] = _get_numeric_value_series(current_work)
-    previous_work["amount"] = _get_numeric_value_series(previous_work)
+    current_work["_amount"] = _get_numeric_value_series(current_work)
+    previous_work["_amount"] = _get_numeric_value_series(previous_work)
 
     current_work["bucket"] = current_work["_dt"].dt.normalize()
     previous_work["bucket"] = previous_work["_dt"].dt.normalize()
 
-    current_series = current_work.groupby("bucket")["amount"].sum()
-    previous_series = previous_work.groupby("bucket")["amount"].sum()
+    current_series = current_work.groupby("bucket")["_amount"].sum()
+    previous_series = previous_work.groupby("bucket")["_amount"].sum()
+
+    duration = current_end - current_start
+    previous_start = (current_start - duration).normalize()
+    previous_end = (current_start - pd.Timedelta(microseconds=1)).normalize()
 
     current_days = pd.date_range(current_start.normalize(), current_end.normalize(), freq="1D")
-    previous_days = pd.date_range(
-        (current_start - (current_end - current_start)).normalize(),
-        (current_start - pd.Timedelta(microseconds=1)).normalize(),
-        freq="1D",
-    )
+    previous_days = pd.date_range(previous_start, previous_end, freq="1D")
     slot_count = max(len(current_days), len(previous_days))
 
     labels = []
@@ -378,10 +428,6 @@ def _render_expenses_comparison_chart(
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _pick_category_column(df: pd.DataFrame) -> str | None:
-    return _pick_first_existing_column(df, ["category", "expenseCategory", "type", "expenseType"])
-
-
 def _build_category_chart_df(df: pd.DataFrame) -> pd.DataFrame:
     category_col = _pick_category_column(df)
     if df.empty or not category_col:
@@ -389,14 +435,13 @@ def _build_category_chart_df(df: pd.DataFrame) -> pd.DataFrame:
 
     work = df.copy()
     work[category_col] = work[category_col].fillna("OTHER").astype(str).str.upper().str.strip()
-    out = (
+    return (
         work.groupby(category_col, dropna=False)
         .size()
         .reset_index(name="count")
         .rename(columns={category_col: "category"})
         .sort_values(["count", "category"], ascending=[False, True])
     )
-    return out
 
 
 def _render_category_bar_chart(df: pd.DataFrame, title: str) -> None:
@@ -555,50 +600,6 @@ def _render_create_expense_modal(selected_account_id: str, allowed_account_ids: 
             st.error(f"Falha ao inserir despesa: {result}")
 
 
-def _filter_df_by_date_range(df: pd.DataFrame, start: pd.Timestamp | None, end: pd.Timestamp | None) -> pd.DataFrame:
-    if df.empty or start is None or end is None:
-        return df
-
-    series = _get_datetime_series(df)
-    if series.empty:
-        return df
-
-    work = df.copy()
-    work["__filter_dt__"] = series
-    work = work[work["__filter_dt__"].notna()]
-    work = work[(work["__filter_dt__"] >= start) & (work["__filter_dt__"] <= end)]
-    return work.drop(columns=["__filter_dt__"], errors="ignore")
-
-
-def _load_expenses_with_best_date_field(account_filter, allowed_account_ids, date_range: dict | None) -> tuple[pd.DataFrame, str | None]:
-    candidate_date_fields = ["expenseDate", "incurredAt", "createdAt", "updatedAt"]
-
-    for field in candidate_date_fields:
-        try:
-            df = load_collection_df(
-                "expenses",
-                account_id=account_filter,
-                allowed_account_ids=allowed_account_ids,
-                date_field=field,
-                date_range=date_range,
-            )
-            if not df.empty:
-                return df, field
-        except Exception:
-            continue
-
-    try:
-        df = load_collection_df(
-            "expenses",
-            account_id=account_filter,
-            allowed_account_ids=allowed_account_ids,
-        )
-    except Exception:
-        return pd.DataFrame(), None
-
-    return df, None
-
-
 user = require_login()
 render_user_box(user)
 render_global_filters(user)
@@ -612,66 +613,40 @@ period_mode = st.session_state.get("period_mode", "Mês")
 
 st.title("Despesas")
 
-current_start, current_end = _extract_current_range(date_range)
-
-expenses_df, detected_date_field = _load_expenses_with_best_date_field(
-    account_filter=account_filter,
+all_expenses_df = load_collection_df(
+    "expenses",
+    account_id=account_filter,
     allowed_account_ids=allowed_account_ids,
-    date_range=date_range,
 )
 
-if detected_date_field is None:
-    expenses_df = _filter_df_by_date_range(expenses_df, current_start, current_end)
+current_start, current_end = _extract_current_range(date_range)
+expenses_df = _filter_df_by_date_range(all_expenses_df, current_start, current_end)
 
 previous_expenses_df = pd.DataFrame()
 previous_start, previous_end = None, None
-
 if current_start is not None and current_end is not None:
     previous_start, previous_end = _previous_range_for_mode(current_start, current_end, period_mode)
-    if detected_date_field is not None:
-        previous_expenses_df = load_collection_df(
-            "expenses",
-            account_id=account_filter,
-            allowed_account_ids=allowed_account_ids,
-            date_field=detected_date_field,
-            date_range=_range_dict(previous_start, previous_end),
-        )
-    else:
-        try:
-            previous_expenses_df = load_collection_df(
-                "expenses",
-                account_id=account_filter,
-                allowed_account_ids=allowed_account_ids,
-            )
-        except Exception:
-            previous_expenses_df = pd.DataFrame()
-        previous_expenses_df = _filter_df_by_date_range(previous_expenses_df, previous_start, previous_end)
+    previous_expenses_df = _filter_df_by_date_range(all_expenses_df, previous_start, previous_end)
 
-sort_col = _pick_first_existing_column(
-    expenses_df,
-    ["expenseDateParsed", "expenseDate", "incurredAtParsed", "incurredAt", "createdAtParsed", "createdAt"],
-)
+sort_col = _pick_first_existing_column(expenses_df, DATE_COLUMN_CANDIDATES)
 if not expenses_df.empty and sort_col:
     expenses_df = expenses_df.sort_values(sort_col, ascending=False, na_position="last")
 
 if not previous_expenses_df.empty:
-    prev_sort_col = _pick_first_existing_column(
-        previous_expenses_df,
-        ["expenseDateParsed", "expenseDate", "incurredAtParsed", "incurredAt", "createdAtParsed", "createdAt"],
-    )
+    prev_sort_col = _pick_first_existing_column(previous_expenses_df, DATE_COLUMN_CANDIDATES)
     if prev_sort_col:
         previous_expenses_df = previous_expenses_df.sort_values(prev_sort_col, ascending=False, na_position="last")
 
+amount_col = _pick_amount_column(expenses_df)
+current_total = float(pd.to_numeric(expenses_df[amount_col], errors="coerce").fillna(0).sum()) if amount_col else 0.0
+current_count = int(safe_count(expenses_df))
+average_value = (current_total / current_count) if current_count > 0 else 0.0
+
 render_kpis(
     [
-        ("Registos", str(safe_count(expenses_df))),
-        ("Despesa total", format_currency(safe_sum(expenses_df, "amount"))),
-        (
-            "Despesa média",
-            format_currency(
-                (safe_sum(expenses_df, "amount") / safe_count(expenses_df)) if safe_count(expenses_df) > 0 else 0
-            ),
-        ),
+        ("Registos", str(current_count)),
+        ("Despesa total", format_currency(current_total)),
+        ("Despesa média", format_currency(average_value)),
     ]
 )
 
@@ -693,22 +668,23 @@ with left:
             title="Valor de despesas por período",
         )
     else:
-        series_col = _pick_first_existing_column(
-            expenses_df,
-            ["expenseDateParsed", "incurredAtParsed", "createdAtParsed", "expenseDate", "incurredAt", "createdAt"],
-        )
-        series_df = time_series(expenses_df, series_col, "amount") if series_col and not expenses_df.empty else pd.DataFrame()
-        if series_df.empty:
+        series = _get_datetime_series(expenses_df)
+        if expenses_df.empty or series.empty or amount_col is None:
             st.info("Sem dados para apresentar.")
         else:
-            fig = px.line(series_df, x="period", y="amount", title="Valor de despesas por período")
-            fig.update_layout(
-                margin=dict(l=10, r=10, t=50, b=10),
-                xaxis_title=None,
-                yaxis_title=None,
-                height=350,
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            series_df = pd.DataFrame({"period": series, "value": pd.to_numeric(expenses_df[amount_col], errors="coerce").fillna(0)})
+            series_df = series_df.dropna(subset=["period"]).groupby("period", as_index=False)["value"].sum()
+            if series_df.empty:
+                st.info("Sem dados para apresentar.")
+            else:
+                fig = px.line(series_df, x="period", y="value", title="Valor de despesas por período")
+                fig.update_layout(
+                    margin=dict(l=10, r=10, t=50, b=10),
+                    xaxis_title=None,
+                    yaxis_title=None,
+                    height=350,
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
 with right:
     category_chart_df = _build_category_chart_df(expenses_df)
@@ -716,81 +692,67 @@ with right:
 
 st.subheader("Tabela de despesas")
 
-visible_columns = [
-    c
-    for c in [
-        "expenseDate",
-        "description",
-        "category",
-        "amount",
-        "currency",
-        "supplier",
-        "source",
-        "accountId",
-        "notes",
-        "createdAt",
-    ]
-    if c in expenses_df.columns
-]
+if expenses_df.empty:
+    st.info("Sem dados para apresentar.")
+else:
+    table_df = expenses_df.copy()
+    if "expenseId" in table_df.columns:
+        table_df = table_df.drop(columns=["expenseId"])
 
-support_columns = [c for c in ["expenseId"] if c in expenses_df.columns]
+    grid_df = _sanitize_for_aggrid(table_df)
 
-table_df = expenses_df[support_columns + visible_columns].copy() if visible_columns or support_columns else expenses_df.copy()
-grid_df = _sanitize_for_aggrid(table_df)
+    gb = GridOptionsBuilder.from_dataframe(grid_df)
+    gb.configure_default_column(resizable=True, sortable=True, filter=True)
 
-gb = GridOptionsBuilder.from_dataframe(grid_df)
-gb.configure_default_column(resizable=True, sortable=True, filter=True)
+    if amount_col and amount_col in grid_df.columns:
+        gb.configure_column(amount_col, type=["numericColumn"])
 
-if "expenseId" in grid_df.columns:
-    gb.configure_column("expenseId", hide=True)
+    gb.configure_grid_options(
+        rowHeight=40,
+        animateRows=False,
+        suppressRowClickSelection=True,
+        suppressCellFocus=False,
+        rowSelection="single",
+    )
 
-if "amount" in grid_df.columns:
-    gb.configure_column("amount", type=["numericColumn"])
+    category_colors_js = json.dumps(CATEGORY_COLORS)
+    category_text_colors_js = json.dumps(CATEGORY_TEXT_COLORS)
 
-gb.configure_grid_options(
-    rowHeight=40,
-    animateRows=False,
-    suppressRowClickSelection=True,
-    suppressCellFocus=False,
-    rowSelection="single",
-)
+    row_style_jscode = JsCode(
+        f"""
+        function(params) {{
+            const data = params.data || {{}};
+            const rawCategory = String(
+                data.category || data.expenseCategory || data.type || data.expenseType || 'OTHER'
+            ).toUpperCase().trim();
+            const bgColors = {category_colors_js};
+            const textColors = {category_text_colors_js};
 
-category_colors_js = json.dumps(CATEGORY_COLORS)
-category_text_colors_js = json.dumps(CATEGORY_TEXT_COLORS)
-
-row_style_jscode = JsCode(
-    f"""
-    function(params) {{
-        const data = params.data || {{}};
-        const rawCategory = String(data.category || data.expenseCategory || data.type || data.expenseType || 'OTHER').toUpperCase().trim();
-        const bgColors = {category_colors_js};
-        const textColors = {category_text_colors_js};
-
-        if (bgColors[rawCategory]) {{
-            const style = {{ backgroundColor: bgColors[rawCategory] }};
-            if (textColors[rawCategory]) {{
-                style.color = textColors[rawCategory];
+            if (bgColors[rawCategory]) {{
+                const style = {{ backgroundColor: bgColors[rawCategory] }};
+                if (textColors[rawCategory]) {{
+                    style.color = textColors[rawCategory];
+                }}
+                return style;
             }}
-            return style;
+
+            return {{}};
         }}
+        """
+    )
 
-        return {{}};
-    }}
-    """
-)
+    gb.configure_grid_options(getRowStyle=row_style_jscode)
 
-gb.configure_grid_options(getRowStyle=row_style_jscode)
+    grid_options = gb.build()
 
-grid_options = gb.build()
-
-AgGrid(
-    grid_df,
-    gridOptions=grid_options,
-    update_mode=GridUpdateMode.NO_UPDATE,
-    allow_unsafe_jscode=True,
-    fit_columns_on_grid_load=False,
-    use_container_width=True,
-    height=550,
-    theme="streamlit",
-    reload_data=False,
-)
+    AgGrid(
+        grid_df,
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.NO_UPDATE,
+        allow_unsafe_jscode=True,
+        fit_columns_on_grid_load=False,
+        use_container_width=True,
+        height=550,
+        theme="streamlit",
+        reload_data=False,
+    )
