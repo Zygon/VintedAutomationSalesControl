@@ -5,7 +5,7 @@ from components.layout import apply_page_layout
 apply_page_layout()
 
 import json
-from datetime import datetime, time, timezone
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pandas as pd
@@ -16,43 +16,45 @@ from components.auth_guard import render_user_box, require_login
 from components.charts import render_bar_chart, render_line_chart
 from components.filters import get_active_filters, render_global_filters
 from components.tables import render_kpis
-from services.firestore_queries import clear_all_caches, load_collection_df, upsert_row
+from services.firestore_queries import load_collection_df, upsert_row
 from services.metrics import format_currency, safe_count, safe_sum, time_series
 
-STATUS_COLORS = {
-    "PENDING": "#fff3cd",
-    "AWAITING_PAYMENT": "#fff3cd",
-    "WAITING_PAYMENT": "#fff3cd",
-    "OPEN": "#fff3cd",
-    "REVIEW": "#cfe2ff",
-    "PROCESSING": "#cfe2ff",
+COMMON_STATUS_COLORS = {
     "PAID": "#d1e7dd",
     "COMPLETED": "#d1e7dd",
+    "DONE": "#d1e7dd",
+    "APPROVED": "#d1e7dd",
+    "PENDING": "#fff3cd",
+    "WAITING": "#fff3cd",
+    "OPEN": "#fff3cd",
+    "RECEIVED": "#cfe2ff",
+    "ISSUED": "#cfe2ff",
+    "IN_PROGRESS": "#cfe2ff",
     "CANCELED": "#e2e3e5",
     "CANCELLED": "#e2e3e5",
     "VOID": "#e2e3e5",
-    "OVERDUE": "#f8d7da",
     "ERROR": "#dc3545",
-    "REJECTED": "#dc3545",
     "FAILED": "#dc3545",
+    "REJECTED": "#dc3545",
 }
 
-STATUS_TEXT_COLORS = {
-    "PENDING": "#856404",
-    "AWAITING_PAYMENT": "#856404",
-    "WAITING_PAYMENT": "#856404",
-    "OPEN": "#856404",
-    "REVIEW": "#0c5460",
-    "PROCESSING": "#0c5460",
+COMMON_STATUS_TEXT_COLORS = {
     "PAID": "#155724",
     "COMPLETED": "#155724",
+    "DONE": "#155724",
+    "APPROVED": "#155724",
+    "PENDING": "#856404",
+    "WAITING": "#856404",
+    "OPEN": "#856404",
+    "RECEIVED": "#0c5460",
+    "ISSUED": "#0c5460",
+    "IN_PROGRESS": "#0c5460",
     "CANCELED": "#41464b",
     "CANCELLED": "#41464b",
     "VOID": "#41464b",
-    "OVERDUE": "#721c24",
     "ERROR": "#ffffff",
-    "REJECTED": "#ffffff",
     "FAILED": "#ffffff",
+    "REJECTED": "#ffffff",
 }
 
 
@@ -61,7 +63,6 @@ def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
         return df.copy()
 
     work = df.copy()
-
     for col in work.columns:
         series = work[col]
 
@@ -69,83 +70,160 @@ def _sanitize_for_aggrid(df: pd.DataFrame) -> pd.DataFrame:
             work[col] = series.dt.strftime("%Y-%m-%d %H:%M:%S").where(series.notna(), None)
             continue
 
-        if pd.api.types.is_string_dtype(series) or series.dtype == "object":
-            work[col] = series.astype("object")
-            work[col] = work[col].where(pd.notna(work[col]), None)
-            work[col] = work[col].map(lambda x: str(x) if x is not None else None)
-            continue
-
-        if pd.api.types.is_integer_dtype(series) or pd.api.types.is_float_dtype(series):
+        if pd.api.types.is_numeric_dtype(series):
             work[col] = pd.to_numeric(series, errors="coerce")
             continue
 
         work[col] = series.astype("object")
         work[col] = work[col].where(pd.notna(work[col]), None)
+        work[col] = work[col].map(lambda x: str(x) if x is not None else None)
 
     return work
 
 
-@st.dialog("Inserir despesa", width="large")
-def _render_insert_expense_modal(account_filter, allowed_account_ids):
-    account_options = list(dict.fromkeys([acc for acc in allowed_account_ids if acc]))
-    default_account = account_filter if account_filter else (account_options[0] if account_options else None)
 
-    with st.form("insert_expense_form", clear_on_submit=False):
-        st.markdown("#### Nova despesa")
+def _display_columns(df: pd.DataFrame) -> list[str]:
+    if df.empty:
+        return []
+    return [c for c in df.columns if c != "expenseId" and not str(c).endswith("Parsed")]
+
+
+
+def _status_options(df: pd.DataFrame) -> list[str]:
+    if "status" not in df.columns or df.empty:
+        return ["PENDING", "RECEIVED", "PAID", "CANCELED", "ERROR"]
+
+    values = []
+    for value in df["status"].dropna().astype(str).str.strip():
+        if value and value not in values:
+            values.append(value)
+
+    base = ["PENDING", "RECEIVED", "PAID", "CANCELED", "ERROR"]
+    for value in base:
+        if value not in values:
+            values.append(value)
+    return values
+
+
+
+def _build_row_style_js() -> JsCode:
+    bg_map = json.dumps(COMMON_STATUS_COLORS)
+    text_map = json.dumps(COMMON_STATUS_TEXT_COLORS)
+    return JsCode(
+        f"""
+        function(params) {{
+            const raw = String((params.data && params.data.status) || '').trim();
+            if (!raw) {{
+                return {{}};
+            }}
+
+            const status = raw.toUpperCase();
+            const bgColors = {bg_map};
+            const textColors = {text_map};
+
+            let bg = bgColors[status] || null;
+            let fg = textColors[status] || null;
+
+            if (!bg) {{
+                if (status.includes('ERR') || status.includes('FAIL') || status.includes('REJECT')) {{
+                    bg = '#dc3545';
+                    fg = '#ffffff';
+                }} else if (status.includes('CANCEL') || status.includes('VOID')) {{
+                    bg = '#e2e3e5';
+                    fg = '#41464b';
+                }} else if (status.includes('PAID') || status.includes('DONE') || status.includes('COMPLETE') || status.includes('APPROV')) {{
+                    bg = '#d1e7dd';
+                    fg = '#155724';
+                }} else if (status.includes('RECEIV') || status.includes('ISSU') || status.includes('PROGRESS')) {{
+                    bg = '#cfe2ff';
+                    fg = '#0c5460';
+                }} else if (status.includes('PEND') || status.includes('WAIT') || status.includes('OPEN')) {{
+                    bg = '#fff3cd';
+                    fg = '#856404';
+                }} else {{
+                    bg = '#f8f9fa';
+                    fg = '#212529';
+                }}
+            }}
+
+            return {{
+                backgroundColor: bg,
+                color: fg || '#212529'
+            }};
+        }}
+        """
+    )
+
+
+
+def _build_status_chart_df(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty or "status" not in df.columns:
+        return pd.DataFrame()
+
+    work = df.copy()
+    work["status"] = work["status"].fillna("SEM_STATUS").astype(str)
+    chart_df = work.groupby("status", dropna=False).size().reset_index(name="count")
+    return chart_df.sort_values("count", ascending=False)
+
+
+
+def _pick_form_account_id(selected_account_id: str | None, allowed_account_ids: list[str]) -> str:
+    if selected_account_id and selected_account_id != "__ALL__":
+        return selected_account_id
+    if allowed_account_ids:
+        return str(allowed_account_ids[0])
+    return ""
+
+
+@st.dialog("Nova despesa", width="large")
+def _render_expense_modal(selected_account_id: str | None, allowed_account_ids: list[str]) -> None:
+    default_account = _pick_form_account_id(selected_account_id, allowed_account_ids)
+
+    with st.form("create_expense_form"):
+        st.markdown("#### Inserir despesa manual")
+
+        account_id = st.text_input("Account ID", value=default_account)
 
         col1, col2 = st.columns(2)
         with col1:
-            if default_account:
-                selected_account_id = st.selectbox(
-                    "Conta",
-                    options=account_options,
-                    index=account_options.index(default_account) if default_account in account_options else 0,
-                )
-            else:
-                selected_account_id = None
-                st.warning("Sem contas disponíveis para inserir despesa.")
-
             invoice_number = st.text_input("Invoice Number")
             billing_period_raw = st.text_input("Billing Period")
-            currency = st.text_input("Currency", value="EUR")
-
+            total_amount = st.number_input("Total Amount", min_value=0.0, step=0.01, format="%.2f")
         with col2:
-            received_date = st.date_input("Data de receção", value=datetime.now(timezone.utc).date())
-            total_amount = st.number_input("Valor total", min_value=0.0, step=0.01, format="%.2f")
-            vat_amount = st.number_input("IVA", min_value=0.0, step=0.01, format="%.2f")
-            status = st.text_input("Status", value="PENDING")
+            currency = st.text_input("Currency", value="EUR")
+            status = st.text_input("Status", value="RECEIVED")
+            vat_amount = st.number_input("VAT Amount", min_value=0.0, step=0.01, format="%.2f")
 
-        submitted = st.form_submit_button("Guardar despesa", use_container_width=True)
+        received_at = st.date_input("Received At", value=datetime.now(timezone.utc).date())
 
-    if not submitted:
-        return
+        submitted = st.form_submit_button("Guardar despesa")
 
-    if not selected_account_id:
-        st.error("Não existe accountId disponível para gravar a despesa.")
-        return
+        if submitted:
+            if not account_id.strip():
+                st.error("Account ID é obrigatório.")
+                return
 
-    expense_id = uuid4().hex
-    received_at = datetime.combine(received_date, time.min, tzinfo=timezone.utc).isoformat()
-    now_iso = datetime.now(timezone.utc).isoformat()
+            expense_id = str(uuid4())
+            received_dt = datetime.combine(received_at, datetime.min.time(), tzinfo=timezone.utc)
+            now_iso = datetime.now(timezone.utc).isoformat()
 
-    payload = {
-        "expenseId": expense_id,
-        "accountId": selected_account_id,
-        "invoiceNumber": invoice_number.strip() or None,
-        "billingPeriodRaw": billing_period_raw.strip() or None,
-        "totalAmount": float(total_amount),
-        "vatAmount": float(vat_amount),
-        "currency": (currency or "EUR").strip().upper(),
-        "receivedAt": received_at,
-        "status": str(status).strip().upper() or None,
-        "createdAt": now_iso,
-        "updatedAt": now_iso,
-    }
+            payload = {
+                "expenseId": expense_id,
+                "accountId": account_id.strip(),
+                "invoiceNumber": invoice_number.strip() or None,
+                "billingPeriodRaw": billing_period_raw.strip() or None,
+                "totalAmount": float(total_amount),
+                "vatAmount": float(vat_amount),
+                "currency": (currency.strip() or "EUR"),
+                "receivedAt": received_dt.isoformat(),
+                "status": (status.strip() or "RECEIVED"),
+                "createdAt": now_iso,
+                "updatedAt": now_iso,
+            }
 
-    upsert_row("expenses", expense_id, payload)
-    clear_all_caches()
-    st.success("Despesa inserida com sucesso.")
-    st.rerun()
+            upsert_row("expenses", expense_id, payload)
+            st.success("Despesa criada com sucesso.")
+            st.rerun()
 
 
 user = require_login()
@@ -160,10 +238,10 @@ date_range = filters["dateRange"]
 
 st.title("Despesas")
 
-action_col, _ = st.columns([1, 5])
-with action_col:
-    if st.button("Inserir despesa", use_container_width=True):
-        _render_insert_expense_modal(account_filter, allowed_account_ids)
+header_left, header_right = st.columns([3, 1])
+with header_right:
+    if st.button("Nova despesa", use_container_width=True):
+        _render_expense_modal(selected_account_id, allowed_account_ids)
 
 expenses_df = load_collection_df(
     "expenses",
@@ -193,67 +271,51 @@ with right:
     )
     render_bar_chart(vat_df, "period", "vatAmount", "IVA por período")
 
+status_chart_df = _build_status_chart_df(expenses_df)
+if not status_chart_df.empty:
+    st.subheader("Distribuição por estado")
+    render_bar_chart(status_chart_df, "status", "count", "Distribuição por estado")
+
 st.subheader("Tabela de despesas")
 
-if expenses_df.empty:
-    AgGrid(pd.DataFrame(), height=300, theme="streamlit")
-else:
-    all_cols = list(expenses_df.columns)
-    visible_cols = [c for c in all_cols if c != "expenseId"]
-    table_df = expenses_df[[c for c in all_cols if c in expenses_df.columns]].copy()
-    grid_df = _sanitize_for_aggrid(table_df)
+visible_cols = _display_columns(expenses_df)
+table_df = expenses_df[visible_cols].copy() if visible_cols else expenses_df.copy()
+grid_df = _sanitize_for_aggrid(table_df)
 
-    gb = GridOptionsBuilder.from_dataframe(grid_df)
-    gb.configure_default_column(resizable=True, sortable=True, filter=True)
+gb = GridOptionsBuilder.from_dataframe(grid_df)
+gb.configure_default_column(resizable=True, sortable=True, filter=True)
 
-    if "expenseId" in grid_df.columns:
-        gb.configure_column("expenseId", hide=True)
-
-    for numeric_col in ["totalAmount", "vatAmount"]:
-        if numeric_col in grid_df.columns:
-            gb.configure_column(numeric_col, type=["numericColumn"])
-
-    status_colors_js = json.dumps(STATUS_COLORS)
-    status_text_colors_js = json.dumps(STATUS_TEXT_COLORS)
-
-    row_style_jscode = JsCode(
-        f"""
-        function(params) {{
-            const rawStatus = String((params.data && params.data.status) || '').toUpperCase().trim();
-            const bgColors = {status_colors_js};
-            const textColors = {status_text_colors_js};
-
-            if (rawStatus && bgColors[rawStatus]) {{
-                const style = {{ backgroundColor: bgColors[rawStatus] }};
-                if (textColors[rawStatus]) {{
-                    style.color = textColors[rawStatus];
-                }}
-                return style;
-            }}
-
-            return {{}};
-        }}
-        """
+status_values = _status_options(expenses_df)
+if "status" in grid_df.columns:
+    gb.configure_column(
+        "status",
+        editable=True,
+        cellEditor="agSelectCellEditor",
+        cellEditorParams={"values": status_values},
     )
 
-    gb.configure_grid_options(
-        rowHeight=40,
-        animateRows=False,
-        suppressRowClickSelection=True,
-        suppressCellFocus=False,
-        getRowStyle=row_style_jscode,
-    )
+for numeric_col in ["totalAmount", "vatAmount"]:
+    if numeric_col in grid_df.columns:
+        gb.configure_column(numeric_col, type=["numericColumn"])
 
-    grid_options = gb.build()
+gb.configure_grid_options(
+    rowHeight=40,
+    animateRows=False,
+    suppressRowClickSelection=True,
+    rowSelection="single",
+    getRowStyle=_build_row_style_js(),
+)
 
-    AgGrid(
-        grid_df[(["expenseId"] if "expenseId" in grid_df.columns else []) + visible_cols],
-        gridOptions=grid_options,
-        update_mode=GridUpdateMode.NO_UPDATE,
-        allow_unsafe_jscode=True,
-        fit_columns_on_grid_load=False,
-        use_container_width=True,
-        height=550,
-        theme="streamlit",
-        reload_data=False,
-    )
+grid_options = gb.build()
+
+AgGrid(
+    grid_df,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.NO_UPDATE,
+    allow_unsafe_jscode=True,
+    fit_columns_on_grid_load=False,
+    use_container_width=True,
+    height=550,
+    theme="streamlit",
+    reload_data=False,
+)
